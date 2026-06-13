@@ -351,13 +351,16 @@ console.log("APP STARTING...");
 async function startApp() {
   showScreen("loading");
 
-  await loadWords(); // ✅ add this
+  await loadWords();
 
   setTimeout(() => {
     if (!quickJoinCheck()) showScreen("start");
   }, 800);
-}
 
+  // ✅ ADD THIS PART
+  document.getElementById("createRoomBtn").onclick = createRoom;
+  document.getElementById("joinRoomBtn").onclick = joinRoom;
+}
 
 startApp();
 

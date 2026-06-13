@@ -22,6 +22,7 @@
 
     let roomData = null;
     let isHost = false;
+    let discussionStarted = false;
 
 
     // ==========================
@@ -182,7 +183,7 @@
     }
 
     setupRoomListener();
-    watchPhaseChanges(); // ✅ add this
+
     showLobby();
     };
 
@@ -225,7 +226,6 @@
         }
 
         setupRoomListener();
-        watchPhaseChanges(); // ✅ add this
         showLobby();
         };
 
@@ -268,6 +268,23 @@
         ) {
             showDiscussion();
         }
+
+
+        
+        if (
+            roomData.phase === "voting" &&
+            !screens.voting.classList.contains("active")
+        ) {
+            showVoting();
+        }
+
+        if (
+            roomData.phase === "results" &&
+            !screens.results.classList.contains("active")
+        ) {
+            showResults(roomData.eliminated);
+        }
+
 
 
         // ✅ THIS PART (IMPORTANT)
@@ -575,33 +592,38 @@
     // DISCUSSION SCREEN + TIMER
     // ==========================
     function showDiscussion() {
-    showScreen("discussion");
 
-    clearInterval(timerInterval);
+        // ✅ PREVENT DOUBLE START
+        if (discussionStarted) return;
+        discussionStarted = true;
 
-    timerInterval = setInterval(() => {
-        const started = roomData.timeStarted;
-        const now = Date.now();
+        showScreen("discussion");
 
-        const elapsed = Math.floor((now - started) / 1000);
-        //Time - Change time
-        
-        const duration = roomData.discussionTime || 120; // fallback
-        const remaining = duration - elapsed;
-
-
-        timeLeft = remaining > 0 ? remaining : 0;
-
-        updateTimer();
-
-        if (timeLeft <= 0) {
         clearInterval(timerInterval);
 
-        if (isHost) {
-            startVoting(); // ✅ only host triggers next phase
-        }
-        }
-    }, 1000);
+        timerInterval = setInterval(() => {
+            const started = roomData.timeStarted;
+
+            if (!started) return;
+
+            const now = Date.now();
+            const elapsed = Math.floor((now - started) / 1000);
+
+            const duration = roomData.discussionTime || 120;
+            const remaining = duration - elapsed;
+
+            timeLeft = remaining > 0 ? remaining : 0;
+
+            updateTimer();
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+
+                if (isHost) {
+                    startVoting();
+                }
+            }
+        }, 1000);
     }
 
 
@@ -625,7 +647,8 @@
     // ==========================
     async function startVoting() {
     const roomRef = doc(db, "rooms", roomId);
-
+    
+    discussionStarted = false;
     await updateDoc(roomRef, {
         phase: "voting",
         votes: {},
@@ -804,30 +827,4 @@
     });
 
     showLobby();
-    }
-
-
-    // ==========================
-    // AUTO PHASE LISTENER
-    // ==========================
-    function watchPhaseChanges() {
-    const roomRef = doc(db, "rooms", roomId);
-
-    onSnapshot(roomRef, (snap) => {
-        if (!snap.exists()) return;
-
-        roomData = snap.data();
-
-        if (roomData.phase === "discussion") {
-        showDiscussion();
-        }
-
-        if (roomData.phase === "voting") {
-        showVoting();
-        }
-
-        if (roomData.phase === "results") {
-        showResults(roomData.eliminated);
-        }
-    });
     }

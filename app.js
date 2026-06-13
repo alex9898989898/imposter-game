@@ -252,15 +252,31 @@
         updateLobbyUI();
 
         
-        if (roomData.phase === "playing") {
+
+        if (
+        roomData.phase === "playing" &&
+        !screens.pass.classList.contains("active") &&
+        !screens.role.classList.contains("active")
+        ) {
         showPassScreen();
         }
 
-        // ✅ ADD THIS:
+
+        // ✅ THIS PART (IMPORTANT)
         if (roomData.readyForDiscussion) {
-        if (
-            roomData.readyForDiscussion.length === roomData.players.length
-        ) {
+        const readyList = roomData.readyForDiscussion;
+
+        // ✅ If THIS player already clicked → update button
+        if (readyList.includes(playerName)) {
+            const btn = document.getElementById("continueBtn");
+            if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Waiting...";
+            }
+        }
+
+        // ✅ Check if ALL players ready
+        if (readyList.length === roomData.players.length) {
             if (isHost && roomData.phase !== "discussion") {
             startDiscussion();
             }
@@ -325,19 +341,31 @@
     // TOGGLE READY
     // ==========================
     async function toggleReady() {
-    const roomRef = doc(db, "rooms", roomId);
+        const roomRef = doc(db, "rooms", roomId);
 
-    const updated = roomData.players.map(p => {
-        if (p.name === playerName) {
-        return { ...p, ready: !p.ready };
-        }
-        return p;
-    });
+        const updated = roomData.players.map(p => {
+            if (p.name === playerName) {
+            return { ...p, ready: !p.ready };
+            }
+            return p;
+        });
+
+        await updateDoc(roomRef, {
+            players: updated
+        });
+    }
+
+    const newReady = [...readyList, playerName];
 
     await updateDoc(roomRef, {
-        players: updated
+        readyForDiscussion: newReady
     });
+
+    // ✅ If YOU are host and last player → start immediately
+    if (isHost && newReady.length === roomData.players.length) {
+        startDiscussion();
     }
+    
 
 
     // ==========================
@@ -463,6 +491,7 @@
     // ==========================
     // SHOW PASS SCREEN
     // ==========================
+
     function revealMyRole() {
         const data = roomData;
 
@@ -488,20 +517,35 @@
         document.getElementById("continueBtn").onclick = async () => {
             const roomRef = doc(db, "rooms", roomId);
 
-            const readyList = roomData.readyForDiscussion || [];
+            const btn = document.getElementById("continueBtn");
+
+            btn.disabled = true;
+            btn.innerText = "Waiting...";
+
+            const snap = await getDoc(roomRef);
+            const freshData = snap.data();
+
+            const readyList = freshData.readyForDiscussion || [];
 
             if (readyList.includes(playerName)) {
-            return toast("You already clicked");
+                return toast("Already waiting");
             }
 
-            await updateDoc(roomRef, {
-            readyForDiscussion: [...readyList, playerName]
-            });
 
-            toast("Waiting for other players...");
+            const newReady = [...readyList, playerName];
+
+                await updateDoc(roomRef, {
+                    readyForDiscussion: newReady
+                });
+
+                // ✅ HOST instantly starts if last player
+                if (isHost && newReady.length === roomData.players.length) {
+                    startDiscussion();
+            }
+
+
         };
-    } // ✅ THIS BRACKET WAS MISSING
-
+    } // ✅ ✅ THIS WAS MISSING
 
     // ==========================
     // START DISCUSSION PHASE

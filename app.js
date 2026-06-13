@@ -347,7 +347,7 @@ async function leaveRoom() {
 // ==========================
 // START APP
 // ==========================
-
+console.log("APP STARTING...");
 async function startApp() {
   showScreen("loading");
 
@@ -391,6 +391,7 @@ async function loadWords() {
     words = ["Pizza", "Volvo", "Football", "School", "Police"];
   }
 }
+console.log("WORDS LOADED");
 
 
 // ==========================
@@ -572,11 +573,11 @@ if (roomData.votes && roomData.votes[playerName]) {
 async function votePlayer(target) {
   const roomRef = doc(db, "rooms", roomId);
   const votes = roomData.votes || {};
+
   votes[playerName] = target;
 
   await updateDoc(roomRef, { votes });
 
-  // ✅ check if all voted
   if (Object.keys(votes).length === roomData.players.length) {
     calculateResults();
   }

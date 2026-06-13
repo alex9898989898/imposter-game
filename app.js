@@ -57,10 +57,19 @@
     el.innerText = msg;
     el.style.display = "block";
 
+
     setTimeout(() => {
-        el.style.display = "none";
-    }, 2000);
-    }
+        const readyList = roomData.readyForDiscussion || [];
+
+        if (
+            isHost &&
+            roomData.phase === "playing" &&
+            readyList.length > 2 // ✅ only if someone clicked
+        ) {
+            startDiscussion();
+        }
+    }, 10000);
+
 
 
     // ==========================
@@ -295,18 +304,20 @@
                 const readyList = roomData.readyForDiscussion;
 
                 // 🔘 If this player already clicked Continue
+
                 if (readyList.includes(playerName)) {
                     const btn = document.getElementById("continueBtn");
                     if (btn) {
                         btn.disabled = true;
-                        btn.innerText = "Waiting...";
 
-                        // ✅ CHANGE COLOR
+                        // ✅ THIS IS THE LINE
+                        btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
+
                         btn.classList.remove("btn-primary");
-                        btn.classList.add("btn-warning"); // yellow/orange
-
+                        btn.classList.add("btn-warning");
                     }
                 }
+
 
                 // ✅ All players ready → host starts discussion
                 if (readyList.length === roomData.players.length) {
@@ -545,8 +556,11 @@
             const roomRef = doc(db, "rooms", roomId);
             const btn = document.getElementById("continueBtn");
 
+            // ✅ IMMEDIATE UI change (works for host too)
             btn.disabled = true;
             btn.innerText = "Waiting...";
+            btn.classList.remove("btn-primary");
+            btn.classList.add("btn-warning");
 
             const snap = await getDoc(roomRef);
             const freshData = snap.data();
@@ -561,7 +575,6 @@
                 });
             }
 
-            // ✅ Re-check after update (fixes stuck issue)
             const updatedSnap = await getDoc(roomRef);
             const updatedData = updatedSnap.data();
 

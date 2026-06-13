@@ -2,7 +2,8 @@
 // FIREBASE CONFIG + INIT
 // ==========================
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
 import {
   getFirestore,
@@ -17,8 +18,7 @@ import {
 
 
 // ==========================
-// YOUR FIREBASE CONFIG
-// (replace with your own)
+// CONFIG
 // ==========================
 const firebaseConfig = {
   apiKey: "AIzaSyAXexSVoVHy0kuqwg4URUTfgydv11ZtlXM",
@@ -32,14 +32,20 @@ const firebaseConfig = {
 
 
 // ==========================
-// INIT APP
+// INIT
 // ==========================
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let db;
+
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+} catch (err) {
+  console.error("Firebase init failed:", err);
+}
 
 
 // ==========================
-// EXPORTS (used in app.js)
+// EXPORTS
 // ==========================
 export {
   db,

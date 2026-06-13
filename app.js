@@ -112,7 +112,6 @@ window.createRoom = async function () {
   });
 
   setupRoomListener();
-
   showCreatedRoom();
 };
 
@@ -183,6 +182,7 @@ window.joinRoom = async function () {
   }
 
   setupRoomListener();
+  watchPhaseChanges(); // ✅ add this
   showLobby();
 };
 
@@ -225,6 +225,7 @@ function quickJoinCheck() {
       }
 
       setupRoomListener();
+      watchPhaseChanges(); // ✅ add this
       showLobby();
     };
 
@@ -328,33 +329,35 @@ async function toggleReady() {
 // ==========================
 // LEAVE ROOM
 // ==========================
+
 async function leaveRoom() {
   const roomRef = doc(db, "rooms", roomId);
 
+  const updated = roomData.players.filter(p => p.name !== playerName);
+
   await updateDoc(roomRef, {
-    players: arrayRemove({
-      name: playerName,
-      ready: false,
-      score: 0
-    })
+    players: updated
   });
 
   location.reload();
 }
 
 
+
 // ==========================
 // START APP
 // ==========================
+
 async function startApp() {
   showScreen("loading");
 
+  await loadWords(); // ✅ add this
+
   setTimeout(() => {
-    if (!quickJoinCheck()) {
-      showScreen("start");
-    }
+    if (!quickJoinCheck()) showScreen("start");
   }, 800);
 }
+
 
 startApp();
 
@@ -403,6 +406,11 @@ async function startGame() {
   if (players.length < 3) {
     return toast("Need at least 3 players");
   }
+  
+    if (!players.every(p => p.ready)) {
+    return toast("All players must be ready");
+    }
+
 
   const word =
     words[Math.floor(Math.random() * words.length)];
@@ -410,12 +418,14 @@ async function startGame() {
   const impostorPlayer =
     players[Math.floor(Math.random() * players.length)].name;
 
-  await updateDoc(roomRef, {
-    phase: "reveal",
+
+    await updateDoc(roomRef, {
+    phase: "playing", // ✅ must match listener
     started: true,
     word,
     impostor: impostorPlayer
-  });
+    });
+
 }
 
 
@@ -481,7 +491,9 @@ async function startDiscussion() {
 function showDiscussion() {
   showScreen("discussion");
 
-  timeLeft = 120; // 2 minutes
+  clearInterval(timerInterval); // ✅ IMPORTANT
+
+  timeLeft = 120;
 
   updateTimer();
 
@@ -551,19 +563,25 @@ function showVoting() {
 // ==========================
 // VOTE PLAYER
 // ==========================
+
+
+if (roomData.votes && roomData.votes[playerName]) {
+  return toast("You already voted");
+}
+
 async function votePlayer(target) {
   const roomRef = doc(db, "rooms", roomId);
-
   const votes = roomData.votes || {};
-
   votes[playerName] = target;
 
-  await updateDoc(roomRef, {
-    votes
-  });
+  await updateDoc(roomRef, { votes });
 
-  toast("Voted!");
+  // ✅ check if all voted
+  if (Object.keys(votes).length === roomData.players.length) {
+    calculateResults();
+  }
 }
+
 
 
 // ==========================
@@ -668,4 +686,3 @@ function watchPhaseChanges() {
     }
   });
 }
-

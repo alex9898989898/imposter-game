@@ -532,18 +532,6 @@
             }
 
 
-            const newReady = [...readyList, playerName];
-
-                await updateDoc(roomRef, {
-                    readyForDiscussion: newReady
-                });
-
-                // ✅ HOST instantly starts if last player
-                if (isHost && newReady.length === roomData.players.length) {
-                    startDiscussion();
-            }
-
-
         };
     } // ✅ ✅ THIS WAS MISSING
 

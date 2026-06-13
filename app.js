@@ -219,13 +219,18 @@ window.confirmAutoJoin = async function () {
 
 
 
+
 async function startApp() {
-  await loadWords();
+  await loadWords();   // ✅ load words first
 
-  // ✅ ALWAYS show UI
-  showStart();
+  // ✅ check link first
+  const params = new URLSearchParams(window.location.search);
 
-  // ✅ THEN check auto join
-  autoJoinFromLink();
+  if (params.get("room")) {
+    autoJoinFromLink(); // ✅ join via link
+  } else {
+    showStart();        // ✅ normal start
+  }
 }
 
+startApp();

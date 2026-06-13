@@ -29,34 +29,59 @@ function showStart() {
   `;
 }
 
+// ✅ CREATE ROOM
 window.createRoom = async function () {
-  name = document.getElementById("name").value;
+  name = document.getElementById("name").value.trim();
 
   if (!name) return alert("Enter name");
 
   roomId = Math.random().toString(36).substring(2,6).toUpperCase();
 
-  await setDoc(doc(db,"rooms",roomId), {
-    players: [name],
-    started: false
-  });
+  try {
+    await setDoc(doc(db,"rooms",roomId), {
+      players: [name],
+      started: false
+    });
 
-  enterLobby();
+    enterLobby();
+  } catch (err) {
+    console.error(err);
+    alert("Error creating room");
+  }
 };
 
+// ✅ JOIN ROOM
 window.joinRoom = async function () {
-  name = document.getElementById("name").value;
+  name = document.getElementById("name").value.trim();
   roomId = document.getElementById("room").value.toUpperCase();
 
-  if (!name || !roomId) return alert("Fill all");
+  if (!name || !roomId) return alert("Fill all fields");
 
-  await updateDoc(doc(db,"rooms",roomId), {
-    players: arrayUnion(name)
-  });
+  try {
+    const snap = await getDoc(doc(db,"rooms",roomId));
 
-  enterLobby();
+    if (!snap.exists()) {
+      alert("Room not found");
+      return;
+    }
+
+    const data = snap.data();
+
+    // ✅ prevent duplicate names
+    if (!data.players.includes(name)) {
+      await updateDoc(doc(db,"rooms",roomId), {
+        players: arrayUnion(name)
+      });
+    }
+
+    enterLobby();
+  } catch (err) {
+    console.error(err);
+    alert("Error joining room");
+  }
 };
 
+// ✅ LOBBY
 function enterLobby() {
   screen.innerHTML = `
     <div class="card">
@@ -71,6 +96,8 @@ function enterLobby() {
   onSnapshot(doc(db,"rooms",roomId), (snap) => {
     const data = snap.data();
 
+    if (!data) return;
+
     playersEl.innerHTML = "";
 
     data.players.forEach(p => {
@@ -79,22 +106,36 @@ function enterLobby() {
       playersEl.appendChild(li);
     });
 
-    if (data.started) showRole(data);
+    // ✅ if game started → show role
+    if (data.started) {
+      showRole(data);
+    }
   });
 
   document.getElementById("startBtn").onclick = async () => {
-    const snap = await getDoc(doc(db,"rooms",roomId));
-    const players = snap.data().players;
+    try {
+      const snap = await getDoc(doc(db,"rooms",roomId));
+      const data = snap.data();
 
-    const word = words[Math.floor(Math.random() * words.length)];
-    const impostor =
-      players[Math.floor(Math.random() * players.length)];
+      if (data.started) return; // ✅ prevent multiple starts
 
-    await updateDoc(doc(db,"rooms",roomId), {
-      started: true,
-      word,
-      impostor
-    });
+      const players = data.players;
+
+      const word = words[Math.floor(Math.random() * words.length)];
+
+      const impostor =
+        players[Math.floor(Math.random() * players.length)];
+
+      await updateDoc(doc(db,"rooms",roomId), {
+        started: true,
+        word,
+        impostor
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("Error starting game");
+    }
   };
 }
 

@@ -355,18 +355,6 @@
         });
     }
 
-    const newReady = [...readyList, playerName];
-
-    await updateDoc(roomRef, {
-        readyForDiscussion: newReady
-    });
-
-    // ✅ If YOU are host and last player → start immediately
-    if (isHost && newReady.length === roomData.players.length) {
-        startDiscussion();
-    }
-    
-
 
     // ==========================
     // LEAVE ROOM

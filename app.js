@@ -54,7 +54,15 @@ window.createRoom = async function () {
       started: false
     });
 
+    // ✅ CREATE LINK
+    const link = `${window.location.origin}?room=${roomId}`;
+
+    navigator.clipboard.writeText(link);
+
+    alert("✅ Link copied! Send to friends:\n" + link);
+
     enterLobby();
+
   } catch (err) {
     console.error(err);
     alert("Error creating room");
@@ -164,9 +172,46 @@ function showRole(data) {
   `;
 }
 
-async function startApp() {
-  await loadWords(); // ✅ load txt first
-  showStart();
+function autoJoinFromLink() {
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get("room");
+
+  if (room) {
+    roomId = room.toUpperCase();
+
+    screen.innerHTML = `
+      <div class="card">
+        <h3>Join Room ${roomId}</h3>
+        <input id="name" placeholder="Your name">
+        <button onclick="confirmAutoJoin()">Join</button>
+      </div>
+    `;
+  }
 }
 
-startApp();
+
+
+window.confirmAutoJoin = async function () {
+  name = document.getElementById("name").value.trim();
+
+  if (!name) return alert("Enter name");
+
+  await updateDoc(doc(db,"rooms",roomId), {
+    players: arrayUnion(name)
+  });
+
+  enterLobby();
+};
+
+
+
+async function startApp() {
+  await loadWords();
+
+  autoJoinFromLink(); // ✅ new
+
+  if (!window.location.search) {
+    showStart();
+  }
+}
+

@@ -11,10 +11,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID"
+  apiKey: "AIzaSyAXexSVoVHy0kuqwg4URUTfgydv11ZtlXM",
+  authDomain: "imposter-game-1eba8.firebaseapp.com",
+  projectId: "imposter-game-1eba8"
 };
+
+
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

@@ -669,26 +669,3 @@ function watchPhaseChanges() {
   });
 }
 
-
-// ==========================
-// PATCH INTO EXISTING FLOW
-// ==========================
-function setupRoomListener() {
-  const roomRef = doc(db, "rooms", roomId);
-
-  onSnapshot(roomRef, (snap) => {
-    if (!snap.exists()) return;
-
-    roomData = snap.data();
-
-    isHost = roomData.host === playerName;
-
-    updateLobbyUI();
-
-    watchPhaseChanges();
-
-    if (roomData.phase === "reveal") {
-      showPassScreen();
-    }
-  });
-}

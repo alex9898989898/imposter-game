@@ -581,7 +581,8 @@
         const now = Date.now();
 
         const elapsed = Math.floor((now - started) / 1000);
-        const remaining = 120 - elapsed;
+        //Time - Change time
+        const remaining = 10 - elapsed;
 
         timeLeft = remaining > 0 ? remaining : 0;
 

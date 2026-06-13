@@ -8,7 +8,18 @@ import {
   arrayUnion
 } from "./firebase.js";
 
-const words = ["Pizza","Volvo","Fotboll","Kebab"];
+let words = [];
+
+// ✅ load words from txt file
+async function loadWords() {
+  const res = await fetch("words.txt");
+  const text = await res.text();
+
+  words = text
+    .split("\n")
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
+}
 
 const screen = document.getElementById("screen");
 
@@ -153,4 +164,9 @@ function showRole(data) {
   `;
 }
 
-showStart();
+async function startApp() {
+  await loadWords(); // ✅ load txt first
+  showStart();
+}
+
+startApp();

@@ -9,7 +9,18 @@ let currentPlayer = 1;
 let imposter = 0;
 let secretWord = "";
 
-// START GAME
+const screen = document.getElementById("screen");
+
+// START SCREEN
+function showStart() {
+  screen.innerHTML = `
+    <div class="card">
+      <input id="players" type="number" placeholder="Antal spelare">
+      <button onclick="startGame()">Start Game</button>
+    </div>
+  `;
+}
+
 function startGame() {
   totalPlayers = parseInt(document.getElementById("players").value);
 
@@ -19,68 +30,51 @@ function startGame() {
   }
 
   currentPlayer = 1;
-
   imposter = Math.floor(Math.random() * totalPlayers) + 1;
-
   secretWord = words[Math.floor(Math.random() * words.length)];
 
   showPlayer();
 }
 
-// SHOW PLAYER
 function showPlayer() {
-  const game = document.getElementById("game");
-
   if (currentPlayer > totalPlayers) {
-    game.innerHTML = `
+    screen.innerHTML = `
       <div class="card">
         <h2>🗣️ Discussion Time</h2>
-        <p>ناقشوا الكلمة وابحثوا عن الدخيل</p>
-
-        <button onclick="startGame()">🔄 New Round</button>
+        <button onclick="showStart()">New Game</button>
       </div>
     `;
     return;
   }
 
-  game.innerHTML = `
+  screen.innerHTML = `
     <div class="card">
       <h2>Player ${currentPlayer}</h2>
-      <h3>اللاعب ${currentPlayer}</h3>
-
-      <button onclick="revealRole()">Reveal / كشف</button>
+      <button onclick="reveal()">Reveal</button>
     </div>
   `;
 }
 
-// REVEAL ROLE
-function revealRole() {
-  const game = document.getElementById("game");
-
+function reveal() {
   let text;
 
   if (currentPlayer === imposter) {
-    text = `
-      <h2>🕵️ IMPOSTER</h2>
-      <h3>أنت الدخيل</h3>
-    `;
+    text = "🕵️ IMPOSTER";
   } else {
-    text = `
-      <h2>✅ ${secretWord}</h2>
-      <h3>الكلمة السرية</h3>
-    `;
+    text = "✅ " + secretWord;
   }
 
-  game.innerHTML = `
+  screen.innerHTML = `
     <div class="card">
-      ${text}
-      <button onclick="nextPlayer()">Next Player</button>
+      <h2>${text}</h2>
+      <button onclick="next()">Next</button>
     </div>
   `;
 }
 
-// NEXT PLAYER
-function nextPlayer() {
+function next() {
   currentPlayer++;
   showPlayer();
 }
+
+showStart();

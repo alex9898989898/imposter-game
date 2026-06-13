@@ -300,6 +300,11 @@
                     if (btn) {
                         btn.disabled = true;
                         btn.innerText = "Waiting...";
+
+                        // ✅ CHANGE COLOR
+                        btn.classList.remove("btn-primary");
+                        btn.classList.add("btn-warning"); // yellow/orange
+
                     }
                 }
 

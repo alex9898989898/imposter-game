@@ -11,73 +11,88 @@ let secretWord = "";
 
 const screen = document.getElementById("screen");
 
-// START SCREEN
+// ✅ START SCREEN
 function showStart() {
   screen.innerHTML = `
     <div class="card">
-      <input id="players" type="number" placeholder="Antal spelare">
+      <h2>Start Game</h2>
+      <input id="players" type="number" min="3" placeholder="Number of players">
       <button onclick="startGame()">Start Game</button>
     </div>
   `;
 }
 
+// ✅ START GAME
 function startGame() {
   const input = document.getElementById("players").value;
 
-  // ✅ FIX: check input
+  // ✅ FIX: strong validation
   if (!input || isNaN(input) || input < 3) {
-    alert("Please enter at least 3 players");
+    alert("Enter at least 3 players!");
     return;
   }
 
   totalPlayers = parseInt(input);
 
   currentPlayer = 1;
-  impostor = Math.floor(Math.random() * totalPlayers) + 1;
-  word = words[Math.floor(Math.random() * words.length)];
+
+  imposter = Math.floor(Math.random() * totalPlayers) + 1;
+
+  // ✅ FIX: use correct variable
+  secretWord = words[Math.floor(Math.random() * words.length)];
 
   showPlayer();
 }
 
+// ✅ SHOW PLAYER
 function showPlayer() {
   if (currentPlayer > totalPlayers) {
-    screen.innerHTML = `
-      <div class="card">
-        <h2>🗣️ Discussion Time</h2>
-        <button onclick="showStart()">New Game</button>
-      </div>
-    `;
+    showEnd();
     return;
   }
 
   screen.innerHTML = `
     <div class="card">
       <h2>Player ${currentPlayer}</h2>
-      <button onclick="reveal()">Reveal</button>
+      <button onclick="reveal()">Reveal Role</button>
     </div>
   `;
 }
 
+// ✅ REVEAL ROLE
 function reveal() {
   let text;
 
   if (currentPlayer === imposter) {
-    text = "🕵️ IMPOSTER";
+    text = "🕵️ YOU ARE THE IMPOSTER!";
   } else {
-    text = "✅ " + secretWord;
+    text = "✅ WORD: " + secretWord;
   }
 
   screen.innerHTML = `
     <div class="card">
       <h2>${text}</h2>
-      <button onclick="next()">Next</button>
+      <button onclick="next()">Next Player</button>
     </div>
   `;
 }
 
+// ✅ NEXT PLAYER
 function next() {
   currentPlayer++;
   showPlayer();
 }
 
+// ✅ END SCREEN
+function showEnd() {
+  screen.innerHTML = `
+    <div class="card">
+      <h2>🗣️ Discussion Time!</h2>
+      <p>Who is the impostor?</p>
+      <button onclick="showStart()">New Game</button>
+    </div>
+  `;
+}
+
+// ✅ INIT
 showStart();

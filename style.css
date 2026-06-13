@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color: white;
+  text-align: center;
+}
+
+.app {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 15px;
+  margin-top: 20px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  background: #667eea;
+  color: white;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+}

@@ -53,22 +53,15 @@
     // TOAST
     // ==========================
     function toast(msg) {
-    const el = document.getElementById("toast");
-    el.innerText = msg;
-    el.style.display = "block";
+        const el = document.getElementById("toast");
+        el.innerText = msg;
+        el.style.display = "block";
 
+        setTimeout(() => {
+            el.style.display = "none";
+        }, 2000);
+    }
 
-    setTimeout(() => {
-        const readyList = roomData.readyForDiscussion || [];
-
-        if (
-            isHost &&
-            roomData.phase === "playing" &&
-            readyList.length > 2 // ✅ only if someone clicked
-        ) {
-            startDiscussion();
-        }
-    }, 10000);
 
 
 
@@ -513,16 +506,20 @@
     function showPassScreen() {
         showScreen("pass");
 
-        document.getElementById("revealRoleBtn").onclick =
-            revealMyRole;
+        document.getElementById("revealRoleBtn").onclick = revealMyRole;
 
-        
+        // ✅ AUTO START (optional)
         setTimeout(() => {
-            if (isHost && roomData.phase === "playing") {
+            const readyList = roomData.readyForDiscussion || [];
+
+            if (
+                isHost &&
+                roomData.phase === "playing" &&
+                readyList.length >= 1
+            ) {
                 startDiscussion();
             }
-        }, 10000); // 10 seconds
-
+        }, 10000);
     }
 
 
@@ -558,7 +555,7 @@
 
             // ✅ IMMEDIATE UI change (works for host too)
             btn.disabled = true;
-            btn.innerText = "Waiting...";
+            btn.innerText = `Waiting (1/${roomData.players.length})`;
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
 

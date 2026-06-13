@@ -557,14 +557,17 @@
     // START DISCUSSION PHASE
     // ==========================
 
-    async function startDiscussion() {
-    const roomRef = doc(db, "rooms", roomId);
 
-    await updateDoc(roomRef, {
-        phase: "discussion",
-        timeStarted: Date.now() // ✅ shared time
-    });
+    async function startDiscussion() {
+        const roomRef = doc(db, "rooms", roomId);
+
+        await updateDoc(roomRef, {
+            phase: "discussion",
+            timeStarted: Date.now(),
+            discussionTime: 240 // ✅ set time here
+        });
     }
+
 
 
 
@@ -582,7 +585,10 @@
 
         const elapsed = Math.floor((now - started) / 1000);
         //Time - Change time
-        const remaining = 10 - elapsed;
+        
+        const duration = roomData.discussionTime || 120; // fallback
+        const remaining = duration - elapsed;
+
 
         timeLeft = remaining > 0 ? remaining : 0;
 

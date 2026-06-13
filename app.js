@@ -23,6 +23,7 @@
     let roomData = null;
     let isHost = false;
     let discussionStarted = false;
+    let votingStarted = false;
 
 
     // ==========================
@@ -240,77 +241,77 @@
     // ROOM LISTENER (REALTIME)
     // ==========================
     function setupRoomListener() {
-    const roomRef = doc(db, "rooms", roomId);
+        const roomRef = doc(db, "rooms", roomId);
 
-    onSnapshot(roomRef, (snap) => {
-        if (!snap.exists()) return;
+        onSnapshot(roomRef, (snap) => {
+            if (!snap.exists()) return;
 
-        roomData = snap.data();
+            roomData = snap.data();
+            isHost = roomData.host === playerName;
 
-        isHost = roomData.host === playerName;
+            updateLobbyUI();
 
-        updateLobbyUI();
-
-        
-
-        if (
-        roomData.phase === "playing" &&
-        !screens.pass.classList.contains("active") &&
-        !screens.role.classList.contains("active")
-        ) {
-        showPassScreen();
-        }
-
-            
-        if (
-            roomData.phase === "discussion" &&
-            !screens.discussion.classList.contains("active")
-        ) {
-            showDiscussion();
-        }
-
-
-        
-        if (
-            roomData.phase === "voting" &&
-            !screens.voting.classList.contains("active")
-        ) {
-            showVoting();
-        }
-
-        if (
-            roomData.phase === "results" &&
-            !screens.results.classList.contains("active")
-        ) {
-            showResults(roomData.eliminated);
-        }
-
-
-
-        // ✅ THIS PART (IMPORTANT)
-        if (roomData.readyForDiscussion) {
-        const readyList = roomData.readyForDiscussion;
-
-        // ✅ If THIS player already clicked → update button
-        if (readyList.includes(playerName)) {
-            const btn = document.getElementById("continueBtn");
-            if (btn) {
-            btn.disabled = true;
-            btn.innerText = "Waiting...";
+            // ✅ 1. ALWAYS CLEANUP FIRST (prevents stuck players)
+            if (roomData.phase !== "discussion") {
+                clearInterval(timerInterval);
+                discussionStarted = false;
             }
-        }
 
-        // ✅ Check if ALL players ready
-        if (readyList.length === roomData.players.length) {
-            if (isHost && roomData.phase !== "discussion") {
-            startDiscussion();
+            // ✅ 2. HANDLE PLAYING
+            if (
+                roomData.phase === "playing" &&
+                !screens.pass.classList.contains("active") &&
+                !screens.role.classList.contains("active")
+            ) {
+                showPassScreen();
             }
-        }
-        }
 
-    });
+            // ✅ 3. HANDLE DISCUSSION
+            if (
+                roomData.phase === "discussion" &&
+                !screens.discussion.classList.contains("active")
+            ) {
+                showDiscussion();
+            }
+
+            // ✅ 4. HANDLE VOTING
+            if (
+                roomData.phase === "voting" &&
+                !screens.voting.classList.contains("active")
+            ) {
+                showVoting();
+            }
+
+            // ✅ 5. HANDLE RESULTS
+            if (
+                roomData.phase === "results" &&
+                !screens.results.classList.contains("active")
+            ) {
+                showResults(roomData.eliminated);
+            }
+
+            // ✅ 6. READY LOGIC
+            if (roomData.readyForDiscussion) {
+                const readyList = roomData.readyForDiscussion;
+
+                // 🔘 If this player already clicked Continue
+                if (readyList.includes(playerName)) {
+                    const btn = document.getElementById("continueBtn");
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerText = "Waiting...";
+                    }
+                }
+
+                // ✅ All players ready → host starts discussion
+                if (readyList.length === roomData.players.length) {
+                    if (isHost && roomData.phase !== "discussion") {
+                        startDiscussion();
+                    }
+                }
+            }
+        });
     }
-
 
     // ==========================
     // SHOW LOBBY
@@ -660,6 +661,13 @@
     // SHOW VOTING UI
     // ==========================
     function showVoting() {
+    
+        
+    if (votingStarted) return;
+    votingStarted = true;
+
+    clearInterval(timerInterval); // ✅ VERY IMPORTANT
+
     showScreen("voting");
 
     const container = document.getElementById("voteList");
@@ -789,6 +797,8 @@
     // SHOW RESULTS
     // ==========================
     function showResults(eliminated) {
+
+    votingStarted = false;
     showScreen("results");
 
     const content = document.getElementById("resultsContent");

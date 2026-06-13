@@ -565,15 +565,13 @@ function showVoting() {
 // VOTE PLAYER
 // ==========================
 
-
-if (roomData.votes && roomData.votes[playerName]) {
-  return toast("You already voted");
-}
-
 async function votePlayer(target) {
+  if (roomData.votes && roomData.votes[playerName]) {
+    return toast("You already voted");
+  }
+
   const roomRef = doc(db, "rooms", roomId);
   const votes = roomData.votes || {};
-
   votes[playerName] = target;
 
   await updateDoc(roomRef, { votes });
@@ -582,7 +580,6 @@ async function votePlayer(target) {
     calculateResults();
   }
 }
-
 
 
 // ==========================

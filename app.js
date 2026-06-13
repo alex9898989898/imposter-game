@@ -12,13 +12,26 @@ let words = [];
 
 // ✅ load words from txt file
 async function loadWords() {
-  const res = await fetch("words.txt");
-  const text = await res.text();
+  try {
+    const res = await fetch("words.txt");
 
-  words = text
-    .split("\n")
-    .map(w => w.trim())
-    .filter(w => w.length > 0);
+    if (!res.ok) throw new Error("File not found");
+
+    const text = await res.text();
+
+    words = text
+      .split("\n")
+      .map(w => w.trim())
+      .filter(w => w.length > 0);
+
+    console.log("Loaded words:", words);
+
+  } catch (err) {
+    console.error("Error loading words:", err);
+
+    // ✅ fallback words so app never crashes
+    words = ["Pizza", "Volvo", "Game"];
+  }
 }
 
 const screen = document.getElementById("screen");
@@ -205,13 +218,14 @@ window.confirmAutoJoin = async function () {
 
 
 
+
 async function startApp() {
   await loadWords();
 
-  autoJoinFromLink(); // ✅ new
+  // ✅ ALWAYS show UI
+  showStart();
 
-  if (!window.location.search) {
-    showStart();
-  }
+  // ✅ THEN check auto join
+  autoJoinFromLink();
 }
 

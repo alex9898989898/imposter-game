@@ -22,16 +22,19 @@ function showStart() {
 }
 
 function startGame() {
-  totalPlayers = parseInt(document.getElementById("players").value);
+  const input = document.getElementById("players").value;
 
-  if (totalPlayers < 3) {
-    alert("Minimum 3 players");
+  // ✅ FIX: check input
+  if (!input || isNaN(input) || input < 3) {
+    alert("Please enter at least 3 players");
     return;
   }
 
+  totalPlayers = parseInt(input);
+
   currentPlayer = 1;
-  imposter = Math.floor(Math.random() * totalPlayers) + 1;
-  secretWord = words[Math.floor(Math.random() * words.length)];
+  impostor = Math.floor(Math.random() * totalPlayers) + 1;
+  word = words[Math.floor(Math.random() * words.length)];
 
   showPlayer();
 }

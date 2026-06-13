@@ -251,9 +251,22 @@
 
         updateLobbyUI();
 
+        
         if (roomData.phase === "playing") {
         showPassScreen();
         }
+
+        // ✅ ADD THIS:
+        if (roomData.readyForDiscussion) {
+        if (
+            roomData.readyForDiscussion.length === roomData.players.length
+        ) {
+            if (isHost && roomData.phase !== "discussion") {
+            startDiscussion();
+            }
+        }
+        }
+
     });
     }
 
@@ -424,55 +437,70 @@
         players[Math.floor(Math.random() * players.length)].name;
 
 
+        
         await updateDoc(roomRef, {
-        phase: "playing", // ✅ must match listener
+        phase: "playing",
         started: true,
         word,
-        impostor: impostorPlayer
+        impostor: impostorPlayer,
+
+        // ✅ reset
+        readyForDiscussion: []
         });
 
+
+    }
+
+    
+    function showPassScreen() {
+        showScreen("pass");
+
+        document.getElementById("revealRoleBtn").onclick =
+            revealMyRole;
     }
 
 
     // ==========================
     // SHOW PASS SCREEN
     // ==========================
-    function showPassScreen() {
-    showScreen("pass");
-
-    document.getElementById("revealRoleBtn").onclick =
-        revealMyRole;
-    }
-
-
-    // ==========================
-    // REVEAL ROLE (ANTI-CHEAT STYLE)
-    // ==========================
     function revealMyRole() {
-    const data = roomData;
+        const data = roomData;
 
-    if (!data) return;
+        if (!data) return;
 
-    if (playerName === data.impostor) {
-        myRole = "IMPOSTOR";
-    } else {
-        myRole = "INNOCENT";
-        gameWord = data.word;
-    }
+        if (playerName === data.impostor) {
+            myRole = "IMPOSTOR";
+        } else {
+            myRole = "INNOCENT";
+            gameWord = data.word;
+        }
 
-    showScreen("role");
+        showScreen("role");
 
-    const el = document.getElementById("roleContent");
+        const el = document.getElementById("roleContent");
 
-    if (myRole === "IMPOSTOR") {
-        el.innerHTML = "🕵️ YOU ARE THE IMPOSTOR";
-    } else {
-        el.innerHTML = "🧠 WORD: " + gameWord;
-    }
+        if (myRole === "IMPOSTOR") {
+            el.innerHTML = "🕵️ YOU ARE THE IMPOSTOR";
+        } else {
+            el.innerHTML = "🧠 WORD: " + gameWord;
+        }
 
-    document.getElementById("continueBtn").onclick =
-        startDiscussion;
-    }
+        document.getElementById("continueBtn").onclick = async () => {
+            const roomRef = doc(db, "rooms", roomId);
+
+            const readyList = roomData.readyForDiscussion || [];
+
+            if (readyList.includes(playerName)) {
+            return toast("You already clicked");
+            }
+
+            await updateDoc(roomRef, {
+            readyForDiscussion: [...readyList, playerName]
+            });
+
+            toast("Waiting for other players...");
+        };
+    } // ✅ THIS BRACKET WAS MISSING
 
 
     // ==========================

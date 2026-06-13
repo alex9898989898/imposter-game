@@ -581,7 +581,7 @@
         await updateDoc(roomRef, {
             phase: "discussion",
             timeStarted: Date.now(),
-            discussionTime: 240 // ✅ set time here
+            discussionTime: 10 // ✅ set time here
         });
     }
 
@@ -647,7 +647,7 @@
     // ==========================
     async function startVoting() {
     const roomRef = doc(db, "rooms", roomId);
-    
+
     discussionStarted = false;
     await updateDoc(roomRef, {
         phase: "voting",

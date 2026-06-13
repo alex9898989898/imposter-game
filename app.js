@@ -473,6 +473,14 @@
 
         document.getElementById("revealRoleBtn").onclick =
             revealMyRole;
+
+        
+        setTimeout(() => {
+            if (isHost && roomData.phase === "playing") {
+                startDiscussion();
+            }
+        }, 10000); // 10 seconds
+
     }
 
 
@@ -504,7 +512,6 @@
 
         document.getElementById("continueBtn").onclick = async () => {
             const roomRef = doc(db, "rooms", roomId);
-
             const btn = document.getElementById("continueBtn");
 
             btn.disabled = true;
@@ -513,14 +520,29 @@
             const snap = await getDoc(roomRef);
             const freshData = snap.data();
 
-            const readyList = freshData.readyForDiscussion || [];
+            let readyList = freshData.readyForDiscussion || [];
 
-            if (readyList.includes(playerName)) {
-                return toast("Already waiting");
+            if (!readyList.includes(playerName)) {
+                readyList.push(playerName);
+
+                await updateDoc(roomRef, {
+                    readyForDiscussion: readyList
+                });
             }
 
+            // ✅ Re-check after update (fixes stuck issue)
+            const updatedSnap = await getDoc(roomRef);
+            const updatedData = updatedSnap.data();
 
+            if (
+                isHost &&
+                updatedData.readyForDiscussion.length === updatedData.players.length
+            ) {
+                startDiscussion();
+            }
         };
+
+
     } // ✅ ✅ THIS WAS MISSING
 
     // ==========================

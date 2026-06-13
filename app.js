@@ -1,236 +1,694 @@
+
+// ==========================
+// IMPORT FIREBASE
+// ==========================
 import {
   db,
   doc,
   setDoc,
+  getDoc,
   updateDoc,
   onSnapshot,
-  getDoc,
-  arrayUnion
+  arrayUnion,
+  arrayRemove
 } from "./firebase.js";
 
-let words = [];
 
-// ✅ load words from txt file
+// ==========================
+// GLOBAL STATE
+// ==========================
+let roomId = null;
+let playerName = null;
+
+let roomData = null;
+let isHost = false;
+
+
+// ==========================
+// DOM HELPERS
+// ==========================
+const screens = {
+  loading: document.getElementById("loadingScreen"),
+  start: document.getElementById("startScreen"),
+  quickJoin: document.getElementById("quickJoinScreen"),
+  created: document.getElementById("roomCreatedScreen"),
+  lobby: document.getElementById("lobbyScreen"),
+  pass: document.getElementById("passScreen"),
+  role: document.getElementById("roleScreen"),
+  discussion: document.getElementById("discussionScreen"),
+  voting: document.getElementById("votingScreen"),
+  results: document.getElementById("resultsScreen"),
+  scoreboard: document.getElementById("scoreboardScreen")
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+}
+
+
+// ==========================
+// TOAST
+// ==========================
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.innerText = msg;
+  el.style.display = "block";
+
+  setTimeout(() => {
+    el.style.display = "none";
+  }, 2000);
+}
+
+
+// ==========================
+// RANDOM ROOM ID
+// ==========================
+function generateRoomId() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let id = "";
+  for (let i = 0; i < 6; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return id;
+}
+
+
+// ==========================
+// LOAD FROM URL (?room=XXXX)
+// ==========================
+function getRoomFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("room");
+}
+
+
+// ==========================
+// CREATE ROOM
+// ==========================
+window.createRoom = async function () {
+  playerName = document.getElementById("playerName").value.trim();
+
+  if (!playerName) return toast("Enter name");
+
+  roomId = generateRoomId();
+  isHost = true;
+
+  const roomRef = doc(db, "rooms", roomId);
+
+  await setDoc(roomRef, {
+    host: playerName,
+    phase: "lobby",
+    started: false,
+    createdAt: Date.now(),
+
+    players: [
+      {
+        name: playerName,
+        ready: false,
+        score: 0
+      }
+    ]
+  });
+
+  setupRoomListener();
+
+  showCreatedRoom();
+};
+
+
+// ==========================
+// SHOW CREATED ROOM SCREEN
+// ==========================
+function showCreatedRoom() {
+  showScreen("created");
+
+  const link = `${window.location.origin}?room=${roomId}`;
+
+  document.getElementById("shareLinkInput").value = link;
+
+  document.getElementById("copyLinkBtn").onclick = async () => {
+    await navigator.clipboard.writeText(link);
+    toast("Copied!");
+  };
+
+  document.getElementById("shareBtn").onclick = async () => {
+    if (navigator.share) {
+      navigator.share({ url: link });
+    } else {
+      toast("Sharing not supported");
+    }
+  };
+
+  document.getElementById("goLobbyBtn").onclick = () => {
+    showLobby();
+  };
+
+  const qr = document.getElementById("qrCode");
+  qr.innerHTML = "";
+  new QRCode(qr, link);
+}
+
+
+// ==========================
+// JOIN ROOM
+// ==========================
+window.joinRoom = async function () {
+  playerName = document.getElementById("playerName").value.trim();
+  const inputRoom = document.getElementById("roomCode").value.trim().toUpperCase();
+
+  if (!playerName || !inputRoom) return toast("Fill all fields");
+
+  roomId = inputRoom;
+
+  const roomRef = doc(db, "rooms", roomId);
+  const snap = await getDoc(roomRef);
+
+  if (!snap.exists()) {
+    return toast("Room not found");
+  }
+
+  const data = snap.data();
+
+  const exists = data.players.some(p => p.name === playerName);
+
+  if (!exists) {
+    await updateDoc(roomRef, {
+      players: arrayUnion({
+        name: playerName,
+        ready: false,
+        score: 0
+      })
+    });
+  }
+
+  setupRoomListener();
+  showLobby();
+};
+
+
+// ==========================
+// QUICK JOIN FROM LINK
+// ==========================
+function quickJoinCheck() {
+  const room = getRoomFromURL();
+
+  if (room) {
+    roomId = room.toUpperCase();
+    showScreen("quickJoin");
+
+    document.getElementById("quickJoinRoomText").innerText =
+      "Room: " + roomId;
+
+    document.getElementById("quickJoinBtn").onclick = async () => {
+      playerName = document.getElementById("quickJoinName").value.trim();
+
+      if (!playerName) return toast("Enter name");
+
+      const roomRef = doc(db, "rooms", roomId);
+      const snap = await getDoc(roomRef);
+
+      if (!snap.exists()) return toast("Room not found");
+
+      const data = snap.data();
+
+      const exists = data.players.some(p => p.name === playerName);
+
+      if (!exists) {
+        await updateDoc(roomRef, {
+          players: arrayUnion({
+            name: playerName,
+            ready: false,
+            score: 0
+          })
+        });
+      }
+
+      setupRoomListener();
+      showLobby();
+    };
+
+    return true;
+  }
+
+  return false;
+}
+
+
+// ==========================
+// ROOM LISTENER (REALTIME)
+// ==========================
+function setupRoomListener() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  onSnapshot(roomRef, (snap) => {
+    if (!snap.exists()) return;
+
+    roomData = snap.data();
+
+    isHost = roomData.host === playerName;
+
+    updateLobbyUI();
+
+    if (roomData.phase === "playing") {
+      showPassScreen();
+    }
+  });
+}
+
+
+// ==========================
+// SHOW LOBBY
+// ==========================
+function showLobby() {
+  showScreen("lobby");
+
+  if (isHost) {
+    document.getElementById("startGameBtn").style.display = "block";
+  } else {
+    document.getElementById("startGameBtn").style.display = "none";
+  }
+
+  document.getElementById("startGameBtn").onclick = startGame;
+
+  document.getElementById("readyBtn").onclick = toggleReady;
+
+  document.getElementById("leaveBtn").onclick = leaveRoom;
+}
+
+
+// ==========================
+// UPDATE LOBBY UI
+// ==========================
+function updateLobbyUI() {
+  if (!roomData) return;
+
+  document.getElementById("roomTitle").innerText = roomId;
+
+  document.getElementById("playerCount").innerText =
+    roomData.players.length + " Players";
+
+  const list = document.getElementById("playersList");
+  list.innerHTML = "";
+
+  roomData.players.forEach(p => {
+    const li = document.createElement("li");
+    li.innerText =
+      p.name +
+      (p.ready ? " ✅" : " ⏳") +
+      (roomData.host === p.name ? " 👑" : "");
+
+    list.appendChild(li);
+  });
+
+  document.getElementById("hostBadge").style.display =
+    isHost ? "block" : "none";
+}
+
+
+// ==========================
+// TOGGLE READY
+// ==========================
+async function toggleReady() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  const updated = roomData.players.map(p => {
+    if (p.name === playerName) {
+      return { ...p, ready: !p.ready };
+    }
+    return p;
+  });
+
+  await updateDoc(roomRef, {
+    players: updated
+  });
+}
+
+
+// ==========================
+// LEAVE ROOM
+// ==========================
+async function leaveRoom() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  await updateDoc(roomRef, {
+    players: arrayRemove({
+      name: playerName,
+      ready: false,
+      score: 0
+    })
+  });
+
+  location.reload();
+}
+
+
+// ==========================
+// START APP
+// ==========================
+async function startApp() {
+  showScreen("loading");
+
+  setTimeout(() => {
+    if (!quickJoinCheck()) {
+      showScreen("start");
+    }
+  }, 800);
+}
+
+startApp();
+
+
+// ==========================
+// GAME STATE (PART 2)
+// ==========================
+let words = [];
+let myRole = null;
+let gameWord = null;
+let impostor = null;
+
+let timerInterval = null;
+let timeLeft = 0;
+
+
+// ==========================
+// LOAD WORDS
+// ==========================
 async function loadWords() {
   try {
     const res = await fetch("words.txt");
-
-    if (!res.ok) throw new Error("File not found");
-
     const text = await res.text();
 
     words = text
       .split("\n")
       .map(w => w.trim())
-      .filter(w => w.length > 0);
+      .filter(Boolean);
 
-    console.log("Loaded words:", words);
-
-  } catch (err) {
-    console.error("Error loading words:", err);
-
-    // ✅ fallback words so app never crashes
-    words = ["Pizza", "Volvo", "Game"];
+  } catch (e) {
+    words = ["Pizza", "Volvo", "Football", "School", "Police"];
   }
 }
 
-const screen = document.getElementById("screen");
 
-let roomId = "";
-let name = "";
+// ==========================
+// START GAME (HOST ONLY)
+// ==========================
+async function startGame() {
+  if (!isHost) return;
 
-// ✅ START SCREEN
-function showStart() {
-  screen.innerHTML = `
-    <div class="card">
-      <input id="name" placeholder="Your name">
+  const roomRef = doc(db, "rooms", roomId);
 
-      <button onclick="createRoom()">Create Room</button>
+  const players = roomData.players;
 
-      <input id="room" placeholder="Room code">
-      <button onclick="joinRoom()">Join Room</button>
-    </div>
-  `;
-}
-
-// ✅ CREATE ROOM
-window.createRoom = async function () {
-  name = document.getElementById("name").value.trim();
-
-  if (!name) return alert("Enter name");
-
-  roomId = Math.random().toString(36).substring(2,6).toUpperCase();
-
-  try {
-    await setDoc(doc(db,"rooms",roomId), {
-      players: [name],
-      started: false
-    });
-
-    // ✅ CREATE LINK
-    const link = `${window.location.origin}?room=${roomId}`;
-
-    navigator.clipboard.writeText(link);
-
-    alert("✅ Link copied! Send to friends:\n" + link);
-
-    enterLobby();
-
-  } catch (err) {
-    console.error(err);
-    alert("Error creating room");
+  if (players.length < 3) {
+    return toast("Need at least 3 players");
   }
-};
 
-// ✅ JOIN ROOM
-window.joinRoom = async function () {
-  name = document.getElementById("name").value.trim();
-  roomId = document.getElementById("room").value.toUpperCase();
+  const word =
+    words[Math.floor(Math.random() * words.length)];
 
-  if (!name || !roomId) return alert("Fill all fields");
+  const impostorPlayer =
+    players[Math.floor(Math.random() * players.length)].name;
 
-  try {
-    const snap = await getDoc(doc(db,"rooms",roomId));
-
-    if (!snap.exists()) {
-      alert("Room not found");
-      return;
-    }
-
-    const data = snap.data();
-
-    // ✅ prevent duplicate names
-    if (!data.players.includes(name)) {
-      await updateDoc(doc(db,"rooms",roomId), {
-        players: arrayUnion(name)
-      });
-    }
-
-    enterLobby();
-  } catch (err) {
-    console.error(err);
-    alert("Error joining room");
-  }
-};
-
-// ✅ LOBBY
-function enterLobby() {
-  screen.innerHTML = `
-    <div class="card">
-      <h3>Room: ${roomId}</h3>
-      <ul id="players"></ul>
-      <button id="startBtn">Start Game</button>
-    </div>
-  `;
-
-  const playersEl = document.getElementById("players");
-
-  onSnapshot(doc(db,"rooms",roomId), (snap) => {
-    const data = snap.data();
-
-    if (!data) return;
-
-    playersEl.innerHTML = "";
-
-    data.players.forEach(p => {
-      const li = document.createElement("li");
-      li.textContent = p;
-      playersEl.appendChild(li);
-    });
-
-    // ✅ if game started → show role
-    if (data.started) {
-      showRole(data);
-    }
+  await updateDoc(roomRef, {
+    phase: "reveal",
+    started: true,
+    word,
+    impostor: impostorPlayer
   });
-
-  document.getElementById("startBtn").onclick = async () => {
-    try {
-      const snap = await getDoc(doc(db,"rooms",roomId));
-      const data = snap.data();
-
-      if (data.started) return; // ✅ prevent multiple starts
-
-      const players = data.players;
-
-      const word = words[Math.floor(Math.random() * words.length)];
-
-      const impostor =
-        players[Math.floor(Math.random() * players.length)];
-
-      await updateDoc(doc(db,"rooms",roomId), {
-        started: true,
-        word,
-        impostor
-      });
-
-    } catch (err) {
-      console.error(err);
-      alert("Error starting game");
-    }
-  };
-}
-
-// ✅ SHOW ROLE
-function showRole(data) {
-  const role =
-    name === data.impostor
-      ? "🕵️ YOU ARE IMPOSTER"
-      : "✅ WORD: " + data.word;
-
-  screen.innerHTML = `
-    <div class="card">
-      <h2>${role}</h2>
-    </div>
-  `;
-}
-
-function autoJoinFromLink() {
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get("room");
-
-  if (room) {
-    roomId = room.toUpperCase();
-
-    screen.innerHTML = `
-      <div class="card">
-        <h3>Join Room ${roomId}</h3>
-        <input id="name" placeholder="Your name">
-        <button onclick="confirmAutoJoin()">Join</button>
-      </div>
-    `;
-  }
 }
 
 
+// ==========================
+// SHOW PASS SCREEN
+// ==========================
+function showPassScreen() {
+  showScreen("pass");
 
-window.confirmAutoJoin = async function () {
-  name = document.getElementById("name").value.trim();
-
-  if (!name) return alert("Enter name");
-
-  await updateDoc(doc(db,"rooms",roomId), {
-    players: arrayUnion(name)
-  });
-
-  enterLobby();
-};
+  document.getElementById("revealRoleBtn").onclick =
+    revealMyRole;
+}
 
 
+// ==========================
+// REVEAL ROLE (ANTI-CHEAT STYLE)
+// ==========================
+function revealMyRole() {
+  const data = roomData;
 
+  if (!data) return;
 
-
-async function startApp() {
-  await loadWords();   // ✅ load words first
-
-  // ✅ check link first
-  const params = new URLSearchParams(window.location.search);
-
-  if (params.get("room")) {
-    autoJoinFromLink(); // ✅ join via link
+  if (playerName === data.impostor) {
+    myRole = "IMPOSTOR";
   } else {
-    showStart();        // ✅ normal start
+    myRole = "INNOCENT";
+    gameWord = data.word;
   }
+
+  showScreen("role");
+
+  const el = document.getElementById("roleContent");
+
+  if (myRole === "IMPOSTOR") {
+    el.innerHTML = "🕵️ YOU ARE THE IMPOSTOR";
+  } else {
+    el.innerHTML = "🧠 WORD: " + gameWord;
+  }
+
+  document.getElementById("continueBtn").onclick =
+    startDiscussion;
 }
 
-startApp();
+
+// ==========================
+// START DISCUSSION PHASE
+// ==========================
+async function startDiscussion() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  await updateDoc(roomRef, {
+    phase: "discussion",
+    timeStarted: Date.now()
+  });
+
+  showDiscussion();
+}
+
+
+// ==========================
+// DISCUSSION SCREEN + TIMER
+// ==========================
+function showDiscussion() {
+  showScreen("discussion");
+
+  timeLeft = 120; // 2 minutes
+
+  updateTimer();
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+
+    updateTimer();
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      startVoting();
+    }
+  }, 1000);
+}
+
+
+// ==========================
+// TIMER UI
+// ==========================
+function updateTimer() {
+  const min = Math.floor(timeLeft / 60);
+  const sec = timeLeft % 60;
+
+  document.getElementById("timerDisplay").innerText =
+    `${min.toString().padStart(2,"0")}:${sec
+      .toString()
+      .padStart(2,"0")}`;
+}
+
+
+// ==========================
+// START VOTING PHASE
+// ==========================
+async function startVoting() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  await updateDoc(roomRef, {
+    phase: "voting",
+    votes: {}
+  });
+
+  showVoting();
+}
+
+
+// ==========================
+// SHOW VOTING UI
+// ==========================
+function showVoting() {
+  showScreen("voting");
+
+  const container = document.getElementById("voteList");
+  container.innerHTML = "";
+
+  roomData.players.forEach(p => {
+    const btn = document.createElement("button");
+    btn.className = "vote-btn";
+    btn.innerText = "Vote: " + p.name;
+
+    btn.onclick = () => votePlayer(p.name);
+
+    container.appendChild(btn);
+  });
+}
+
+
+// ==========================
+// VOTE PLAYER
+// ==========================
+async function votePlayer(target) {
+  const roomRef = doc(db, "rooms", roomId);
+
+  const votes = roomData.votes || {};
+
+  votes[playerName] = target;
+
+  await updateDoc(roomRef, {
+    votes
+  });
+
+  toast("Voted!");
+}
+
+
+// ==========================
+// CALCULATE RESULTS
+// ==========================
+async function calculateResults() {
+  const votes = roomData.votes || {};
+
+  const count = {};
+
+  Object.values(votes).forEach(v => {
+    count[v] = (count[v] || 0) + 1;
+  });
+
+  let max = 0;
+  let eliminated = null;
+
+  Object.keys(count).forEach(name => {
+    if (count[name] > max) {
+      max = count[name];
+      eliminated = name;
+    }
+  });
+
+  const roomRef = doc(db, "rooms", roomId);
+
+  await updateDoc(roomRef, {
+    phase: "results",
+    eliminated
+  });
+
+  showResults(eliminated);
+}
+
+
+// ==========================
+// SHOW RESULTS
+// ==========================
+function showResults(eliminated) {
+  showScreen("results");
+
+  const content = document.getElementById("resultsContent");
+
+  let text = "";
+
+  if (eliminated === roomData.impostor) {
+    text = "🎉 Impostor was caught!";
+  } else {
+    text = "❌ Wrong vote! Impostor wins!";
+  }
+
+  content.innerHTML = `
+    <h3>${text}</h3>
+    <p>Impostor was: ${roomData.impostor}</p>
+    <p>Word was: ${roomData.word}</p>
+  `;
+
+  document.getElementById("nextRoundBtn").onclick =
+    nextRound;
+}
+
+
+// ==========================
+// NEXT ROUND
+// ==========================
+async function nextRound() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  await updateDoc(roomRef, {
+    phase: "lobby",
+    votes: {},
+    impostor: null,
+    word: null,
+    started: false
+  });
+
+  showLobby();
+}
+
+
+// ==========================
+// AUTO PHASE LISTENER
+// ==========================
+function watchPhaseChanges() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  onSnapshot(roomRef, (snap) => {
+    if (!snap.exists()) return;
+
+    roomData = snap.data();
+
+    if (roomData.phase === "discussion") {
+      showDiscussion();
+    }
+
+    if (roomData.phase === "voting") {
+      showVoting();
+    }
+
+    if (roomData.phase === "results") {
+      showResults(roomData.eliminated);
+    }
+  });
+}
+
+
+// ==========================
+// PATCH INTO EXISTING FLOW
+// ==========================
+function setupRoomListener() {
+  const roomRef = doc(db, "rooms", roomId);
+
+  onSnapshot(roomRef, (snap) => {
+    if (!snap.exists()) return;
+
+    roomData = snap.data();
+
+    isHost = roomData.host === playerName;
+
+    updateLobbyUI();
+
+    watchPhaseChanges();
+
+    if (roomData.phase === "reveal") {
+      showPassScreen();
+    }
+  });
+}

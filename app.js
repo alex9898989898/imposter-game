@@ -261,6 +261,14 @@
         showPassScreen();
         }
 
+            
+        if (
+            roomData.phase === "discussion" &&
+            !screens.discussion.classList.contains("active")
+        ) {
+            showDiscussion();
+        }
+
 
         // ✅ THIS PART (IMPORTANT)
         if (roomData.readyForDiscussion) {

@@ -591,7 +591,7 @@
         await updateDoc(roomRef, {
             phase: "discussion",
             timeStarted: Date.now(),
-            discussionTime: 10 // ✅ set time here
+            discussionTime: 60 // ✅ set time here
         });
     }
 

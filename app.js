@@ -268,45 +268,42 @@ function setupRoomListener() {
         unsubscribeRoom();
     }
 
-    
-    const stillInRoom = roomData.players.some(p => p.name === playerName);
-
-    if (!stillInRoom) {
-        toast("You were removed from room ❌");
-
-        localStorage.removeItem("roomId");
-        localStorage.removeItem("playerName");
-
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
-
-        return;
-    }
-
     const roomRef = doc(db, "rooms", roomId);
 
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
         if (!snap.exists()) {
-
             localStorage.removeItem("roomId");
             localStorage.removeItem("playerName");
 
             toast("Room closed");
-
             location.reload();
-
             return;
         }
 
-        console.log("Snapshot:", snap.data());
-
         const data = snap.data();
 
-        if (!data || !data.phase) return;
+        console.log("Snapshot:", data);
+
+        // ✅ SAFETY CHECK
+        if (!data || !data.phase || !data.players) return;
 
         roomData = data;
+
+        // ✅ AUTO-KICK IF REMOVED
+        const stillInRoom = roomData.players.some(p => p.name === playerName);
+
+        if (!stillInRoom) {
+            toast("You were removed ❌");
+
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("playerName");
+
+            setTimeout(() => location.reload(), 1000);
+            return;
+        }
+
+        // ✅ HOST CHECK
         const previousHost = isHost;
         isHost = roomData.host === playerName;
 
@@ -316,11 +313,10 @@ function setupRoomListener() {
 
         updateLobbyUI();
 
-        
-        // ✅ ONLY show pass screen if still no one started discussion
+        // ✅ PASS SCREEN
         if (
             roomData.phase === "playing" &&
-            !roomData.timeStarted && // ✅ key fix
+            !roomData.timeStarted &&
             !screens.pass.classList.contains("active") &&
             !screens.role.classList.contains("active")
         ) {
@@ -329,7 +325,6 @@ function setupRoomListener() {
 
         // ✅ AUTO START DISCUSSION
         if (roomData.phase === "playing") {
-
             const ready = roomData.readyForDiscussion || [];
 
             if (
@@ -340,20 +335,18 @@ function setupRoomListener() {
             }
         }
 
-
+        // ✅ DISCUSSION
         if (roomData.phase === "discussion") {
             showDiscussion();
         }
 
-
+        // ✅ VOTING
         if (roomData.phase === "voting") {
-            showVoting(); // ✅ ALWAYS refresh
+            showVoting();
         }
 
-        if (
-            roomData.phase === "results" &&
-            !screens.results.classList.contains("active")
-        ) {
+        // ✅ RESULTS
+        if (roomData.phase === "results") {
             showResults();
         }
     });

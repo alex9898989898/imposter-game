@@ -316,13 +316,11 @@ function setupRoomListener() {
 
         // ✅ PASS SCREEN
 
-        if (
-            roomData.phase === "playing" &&
-            !screens.pass.classList.contains("active") &&
-            !screens.role.classList.contains("active")
-        ) {
+
+        if (roomData.phase === "playing" && !roomData.timeStarted) {
             showPassScreen();
         }
+
 
 
         // ✅ AUTO START DISCUSSION
@@ -605,11 +603,14 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("WORDS LOADED");
 
         
-    function showPassScreen() {
-            showScreen("pass");
 
-            document.getElementById("revealRoleBtn").onclick = revealMyRole;
+    function showPassScreen() {
+        clearGameTimer();   // ✅ STOP any old timer
+        showScreen("pass");
+
+        document.getElementById("revealRoleBtn").onclick = revealMyRole;
     }
+
 
     // ==========================
     // START GAME (HOST ONLY)

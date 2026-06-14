@@ -296,6 +296,21 @@ function setupRoomListener() {
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
+
+        // ✅ UPDATE WAITING UI LIVE
+        if (roomData.phase === "playing" && !roomData.timeStarted) {
+
+            const ready = roomData.readyForDiscussion || [];
+            const total = roomData.players.length;
+
+            const btn = document.getElementById("continueBtn");
+
+            if (btn) {
+                btn.innerText = `Waiting... (${ready.length}/${total})`;
+
+                console.log("⏳ LIVE WAIT:", ready.length, "/", total);
+            }
+        }
         
         if (roomData.phase === "playing") {
             // ✅ ensure fresh round state
@@ -772,7 +787,7 @@ window.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
 
-        document.getElementById("continueBtn").onclick = async () => {
+       document.getElementById("continueBtn").onclick = async () => {
 
             console.log("➡️ Continue clicked");
 
@@ -784,15 +799,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
             const roomRef = doc(db, "rooms", roomId);
 
-            const readyList = roomData.readyForDiscussion || [];
-
-            // ✅ THIS IS THE CRITICAL PART
-            if (!readyList.includes(playerName)) {
+            if (!(roomData.readyForDiscussion || []).includes(playerName)) {
                 await updateDoc(roomRef, {
-                    readyForDiscussion: [...readyList, playerName]
+                    readyForDiscussion: arrayUnion(playerName)
                 });
+
                 console.log("✅ ADDED TO READY:", playerName);
             }
+
+            // ✅ only initial UI
+            btn.innerText = "Waiting...";
         };
         
 

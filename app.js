@@ -323,9 +323,6 @@ function setupRoomListener() {
         ) {
             showPassScreen();
         }
-        {
-            showPassScreen();
-        }
 
         // ✅ AUTO START DISCUSSION
 

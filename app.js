@@ -799,70 +799,54 @@
     // ==========================
     // CALCULATE RESULTS
     // ==========================
+
     async function calculateResults() {
-    const votes = roomData.votes || {};
+        const roomRef = doc(db, "rooms", roomId);
 
-    const count = {};
+        await updateDoc(roomRef, {
+            phase: "results"
+        });
 
-    Object.values(votes).forEach(v => {
-        count[v] = (count[v] || 0) + 1;
-    });
-
-    let max = 0;
-    let eliminated = null;
-
-    Object.keys(count).forEach(name => {
-        if (count[name] > max) {
-        max = count[name];
-        eliminated = name;
-        }
-    });
-
-    const roomRef = doc(db, "rooms", roomId);
-
-    await updateDoc(roomRef, {
-        phase: "results",
-        eliminated
-    });
-
-    showResults(eliminated);
+        showResults();
     }
 
 
     // ==========================
     // SHOW RESULTS
     // ==========================
-    function showResults(eliminated) {
+   function showResults() {
         showScreen("results");
 
         const votes = roomData.votes || {};
         const content = document.getElementById("resultsContent");
 
+        const impostor = roomData.impostor;
+
         let winners = [];
 
-        // ✅ CASE 1: impostor was caught
-        if (eliminated === roomData.impostor) {
+        // ✅ find players who guessed impostor
+        Object.keys(votes).forEach(player => {
+            if (votes[player] === impostor) {
+                winners.push(player);
+            }
+        });
 
-            Object.keys(votes).forEach(player => {
-                if (votes[player] === roomData.impostor) {
-                    winners.push(player);
-                }
-            });
+        // ✅ CASE 1: at least 1 correct guess
+        if (winners.length > 0) {
 
             content.innerHTML = `
-                <h3>🎉 Impostor caught!</h3>
-                <p>Impostor was: ${roomData.impostor}</p>
-                <p>✅ Winners: ${winners.join(", ") || "None"}</p>
+                <h3>🎯 Players found the impostor!</h3>
+                <p>Impostor was: ${impostor}</p>
+                <p>✅ Winners: ${winners.join(", ")}</p>
             `;
 
         } else {
-            // ✅ CASE 2: impostor NOT caught → impostor wins
-            winners = [roomData.impostor];
+            // ✅ CASE 2: nobody guessed impostor
 
             content.innerHTML = `
-                <h3>❌ Wrong vote!</h3>
-                <p>Impostor was: ${roomData.impostor}</p>
-                <p>👑 Winner: ${roomData.impostor}</p>
+                <h3>🕵️ Nobody found the impostor!</h3>
+                <p>Impostor was: ${impostor}</p>
+                <p>👑 Winner: ${impostor}</p>
             `;
         }
 

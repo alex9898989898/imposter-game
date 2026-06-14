@@ -784,7 +784,7 @@
         const now = Date.now();
 
         const elapsed = Math.floor((now - start) / 1000);
-        const remaining = 10 - elapsed;
+        const remaining = 60 - elapsed;
 
         document.getElementById("voteTimer").innerText =
         `⏳ ${remaining > 0 ? remaining : 0}s`;

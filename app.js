@@ -315,27 +315,33 @@ function setupRoomListener() {
         updateLobbyUI();
 
         // ✅ PASS SCREEN
+
         if (
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
-            !screens.pass.classList.contains("active") &&
-            !screens.role.classList.contains("active")
+            !timerInterval
         ) {
+            showPassScreen();
+        }
+        {
             showPassScreen();
         }
 
         // ✅ AUTO START DISCUSSION
+
         if (roomData.phase === "playing") {
             const ready = roomData.readyForDiscussion || [];
 
-            
-        if (
-            ready.length === roomData.players.length &&
-            isHost &&
-            !roomData.timeStarted   // ✅ ONLY RUN ONCE
-        ) {
-            startDiscussion();
-        }
+            if (
+                ready.length === roomData.players.length &&
+                isHost &&
+                roomData.phase === "playing" &&
+                !roomData.timeStarted
+            ) {
+                console.log("✅ ALL READY → starting discussion");
+
+                startDiscussion();
+            }
 
         }
 

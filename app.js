@@ -738,7 +738,7 @@ window.addEventListener("DOMContentLoaded", () => {
             await updateDoc(roomRef, {
                 phase: "discussion",
                 timeStarted: Date.now(),
-                discussionTime: 120 //change time - disc
+                discussionTime: 5 //change time - disc
             });
 
         } catch (err) {

@@ -342,32 +342,32 @@
     // ==========================
     // UPDATE LOBBY UI
     // ==========================
+   
     function updateLobbyUI() {
-    if (!roomData) return;
+        if (!roomData) return;
 
-    document.getElementById("roomTitle").innerText = roomId;
+        document.getElementById("roomTitle").innerText = roomId;
 
-    document.getElementById("playerCount").innerText =
-        roomData.players.length + " Players";
+        document.getElementById("playerCount").innerText =
+            roomData.players.length + " Players";
 
-    const list = document.getElementById("playersList");
-    list.innerHTML = "";
+        const list = document.getElementById("playersList");
+        list.innerHTML = "";
 
-    roomData.players.forEach(p => {
-        const li = document.createElement("li");
-        li.innerText =
-        p.name +
-        (p.ready ? " ✅" : " ⏳") +
-        (roomData.host === p.name ? " 👑" : "");
+        roomData.players.forEach(p => {
+            const li = document.createElement("li");
 
-        list.appendChild(li);
-    });
+            li.innerText =
+                p.name +
+                (p.ready ? " ✅" : " ⏳") +
+                (roomData.host === p.name ? " 👑" : "");
 
-    document.getElementById("hostBadge").style.display =
-        isHost ? "block" : "none";
+            list.appendChild(li);
+        });
+
+        document.getElementById("hostBadge").style.display =
+            isHost ? "block" : "none";
     }
-
-
 
     // ==========================
     // TOGGLE READY
@@ -709,6 +709,10 @@
 
     // ✅ PLAYERS BUTTONS
     roomData.players.forEach(p => {
+
+        // ✅ SKIP yourself completely
+        if (p.name === playerName) return;
+
         const btn = document.createElement("button");
         btn.className = "vote-btn";
         btn.innerText = p.name;
@@ -716,14 +720,14 @@
         const alreadyVoted = votes[playerName];
 
         if (alreadyVoted === p.name) {
-        btn.style.background = "#22c55e";
+            btn.style.background = "#22c55e";
         }
 
         if (alreadyVoted) {
-        btn.disabled = true;
-        btn.style.opacity = "0.6";
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
         } else {
-        btn.onclick = () => votePlayer(p.name);
+            btn.onclick = () => votePlayer(p.name);
         }
 
         container.appendChild(btn);
@@ -759,33 +763,38 @@
     // ==========================
 
     async function votePlayer(target) {
-    
-    // ✅ INSTANT UI feedback (before Firebase updates)
-    const buttons = document.querySelectorAll(".vote-btn");
 
-    buttons.forEach(btn => {
-        if (btn.innerText === target) {
-            btn.style.background = "#22c55e"; // green
+        // ✅ FIRST check self vote
+        if (target === playerName) {
+            return toast("You cannot vote for yourself");
         }
-        btn.disabled = true; // disable all buttons after voting
-        btn.style.opacity = "0.6";
-    });
 
-    if (roomData.votes && roomData.votes[playerName]) {
-        return toast("You already voted");
+        // ✅ prevent double vote
+        if (roomData.votes && roomData.votes[playerName]) {
+            return toast("You already voted");
+        }
+
+        // ✅ instant UI feedback
+        const buttons = document.querySelectorAll(".vote-btn");
+
+        buttons.forEach(btn => {
+            if (btn.innerText === target) {
+                btn.style.background = "#22c55e";
+            }
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
+        });
+
+        const roomRef = doc(db, "rooms", roomId);
+        const votes = roomData.votes || {};
+        votes[playerName] = target;
+
+        await updateDoc(roomRef, { votes });
+
+        if (Object.keys(votes).length === roomData.players.length) {
+            calculateResults();
+        }
     }
-
-    const roomRef = doc(db, "rooms", roomId);
-    const votes = roomData.votes || {};
-    votes[playerName] = target;
-
-    await updateDoc(roomRef, { votes });
-    
-    if (Object.keys(votes).length === roomData.players.length) {
-        calculateResults();
-    }
-    }
-
 
     // ==========================
     // CALCULATE RESULTS

@@ -170,8 +170,9 @@
     }
 
     const data = snap.data();
-
-    const exists = data.players.some(p => p.name === playerName);
+    const exists = data.players.some(
+        p => p.name.toLowerCase() === playerName.toLowerCase()
+    );
 
     if (!exists) {
         await updateDoc(roomRef, {
@@ -214,17 +215,21 @@
 
         const data = snap.data();
 
-        const exists = data.players.some(p => p.name === playerName);
+        const exists = data.players.some(
+            p => p.name.toLowerCase() === playerName.toLowerCase()
+        );
 
-        if (!exists) {
-            await updateDoc(roomRef, {
+        if (exists) {
+            return toast("Name already taken ❌");
+        }
+
+        await updateDoc(roomRef, {
             players: arrayUnion({
                 name: playerName,
                 ready: false,
                 score: 0
             })
-            });
-        }
+        });
 
         setupRoomListener();
         showLobby();
@@ -377,12 +382,12 @@
         if (btn) {
             if (me && me.ready) {
                 btn.disabled = true;
-                btn.innerText = "✅ Ready";
+                btn.innerText = "You are ready ✅";
                 btn.classList.remove("btn-success");
                 btn.classList.add("btn-warning");
             } else {
                 btn.disabled = false;
-                btn.innerText = "✅ Ready";
+                btn.innerText = "✅ Ready Up";
                 btn.classList.remove("btn-warning");
                 btn.classList.add("btn-success");
             }
@@ -600,7 +605,6 @@
             if (
                 isHost &&
                 ready.length === updated.players.length &&
-                revealed.length === updated.players.length &&
                 updated.phase === "playing"
             ) {
                 startDiscussion();
@@ -792,7 +796,7 @@
 
     async function votePlayer(target) {
 
-        // ✅ FIRST check self vote
+        // ✅ prevent self vote
         if (target === playerName) {
             return toast("You cannot vote for yourself");
         }
@@ -802,7 +806,7 @@
             return toast("You already voted");
         }
 
-        // ✅ instant UI feedback
+        // ✅ UI feedback
         const buttons = document.querySelectorAll(".vote-btn");
 
         buttons.forEach(btn => {
@@ -814,12 +818,19 @@
         });
 
         const roomRef = doc(db, "rooms", roomId);
-        const votes = roomData.votes || {};
-        votes[playerName] = target;
 
-        await updateDoc(roomRef, { votes });
+        // ✅ BUILD UPDATED VOTES (single source of truth)
+        const updatedVotes = { ...(roomData.votes || {}) };
+        updatedVotes[playerName] = target;
 
-        if (Object.keys(votes).length === roomData.players.length) {
+        // ✅ SINGLE UPDATE
+        await updateDoc(roomRef, { votes: updatedVotes });
+
+        // ✅ CHECK AFTER UPDATE
+        const votedCount = Object.keys(updatedVotes).length;
+        const totalPlayers = roomData.players.length;
+
+        if (votedCount === totalPlayers) {
             calculateResults();
         }
     }
@@ -844,6 +855,7 @@
     // ==========================
   
     function showResults() {
+        document.body.classList.remove("win", "lose");
         showScreen("results");
 
         const votes = roomData.votes || {};

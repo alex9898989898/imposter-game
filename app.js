@@ -318,11 +318,12 @@ function setupRoomListener() {
 
         if (
             roomData.phase === "playing" &&
-            !roomData.timeStarted &&
-            !timerInterval
+            !screens.pass.classList.contains("active") &&
+            !screens.role.classList.contains("active")
         ) {
             showPassScreen();
         }
+
 
         // ✅ AUTO START DISCUSSION
 
@@ -659,6 +660,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
 
     async function revealMyRole() {
+        console.log("Reveal clicked ✅");
         const data = roomData;
         if (!data) return;
 

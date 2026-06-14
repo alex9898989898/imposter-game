@@ -56,9 +56,12 @@
         const el = document.getElementById("toast");
         el.innerText = msg;
         el.style.display = "block";
-
-
+        
+        setTimeout(() => {
+            el.style.display = "none";
+        }, 2000);
     }
+
 
 
 
@@ -174,15 +177,19 @@
         p => p.name.toLowerCase() === playerName.toLowerCase()
     );
 
-    if (!exists) {
-        await updateDoc(roomRef, {
+
+    if (exists) {
+        return toast("Name already taken ❌"); // ✅ STOP here
+    }
+
+    await updateDoc(roomRef, {
         players: arrayUnion({
             name: playerName,
             ready: false,
             score: 0
         })
-        });
-    }
+    });
+
 
     setupRoomListener();
 
@@ -323,6 +330,8 @@
             }
         });
     }
+
+
 
     // ==========================
     // SHOW LOBBY
@@ -920,15 +929,28 @@
     // NEXT ROUND
     // ==========================
     async function nextRound() {
-    const roomRef = doc(db, "rooms", roomId);
+        const roomRef = doc(db, "rooms", roomId);
 
-    await updateDoc(roomRef, {
-        phase: "lobby",
-        votes: {},
-        impostor: null,
-        word: null,
-        started: false
-    });
+        await updateDoc(roomRef, {
+            phase: "lobby",
+            votes: {},
+            impostor: null,
+            word: null,
+            started: false,
+            readyForDiscussion: [],      // ✅ add this
+            revealedPlayers: [],        // ✅ VERY important reset
+            
+            readyForDiscussion: [],
+            revealedPlayers: []
 
-    showLobby();
+        });
+
+        // ✅ RESET LOCAL STATE
+        discussionStarted = false;
+        votingStarted = false;
+
+        document.body.classList.remove("win", "lose");
+
+        showLobby();
     }
+

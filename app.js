@@ -1093,18 +1093,11 @@ window.addEventListener("DOMContentLoaded", () => {
     // NEXT ROUND
     // ==========================
     async function nextRound() {
-        passShown = false;
         const roomRef = doc(db, "rooms", roomId);
-
-        const resetPlayers =
-            roomData.players.map(p => ({
-                ...p,
-                ready: false  // ✅ ONLY HERE but controlled
-            }));
 
         await updateDoc(roomRef, {
             phase: "lobby",
-            players: resetPlayers,
+            players: roomData.players, // ✅ DO NOT RESET READY HERE
             votes: {},
             impostor: null,
             word: null,
@@ -1115,7 +1108,8 @@ window.addEventListener("DOMContentLoaded", () => {
             voteStarted: null
         });
 
-        clearGameTimer(); // ✅ IMPORTANT
+        passShown = false; // ✅ important if using flag
+        clearGameTimer();
 
         discussionStarted = false;
         votingStarted = false;

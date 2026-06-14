@@ -635,9 +635,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
             // UI update
             btn.disabled = true;
-            btn.innerText = "Waiting...";
+            
+            const total = roomData.players.length;
+            const ready = roomData.readyForDiscussion?.length || 0;
+
+            btn.innerText = `Waiting... (${ready}/${total})`;
+
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
+
+            
+            const interval = setInterval(() => {
+                const total = roomData.players.length;
+                const ready = roomData.readyForDiscussion?.length || 0;
+
+                btn.innerText = `Waiting... (${ready}/${total})`;
+
+                if (ready === total) {
+                    clearInterval(interval);
+                }
+            }, 500);
+
 
             const roomRef = doc(db, "rooms", roomId);
 
@@ -686,11 +704,14 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     function showDiscussion() {
 
-        if (discussionStarted) return;
+
         discussionStarted = true;
 
         showScreen("discussion");
-        updateTimer(); // ✅ ensures it doesn't show 00:00 initially
+        
+        timeLeft = roomData.discussionTime || 120;
+        updateTimer();
+
 
         clearGameTimer();
 

@@ -297,16 +297,17 @@ function setupRoomListener() {
 
         roomData = data;
         
+        if (roomData.phase === "lobby") {
+            passShown = false;
+            discussionStarted = false;
+        }
+
+        
         console.log("🧠 PHASE:", roomData.phase);
         console.log("🧠 timeStarted:", roomData.timeStarted);
         console.log("🧠 readyForDiscussion:", roomData.readyForDiscussion);
         console.log("🧠 passShown:", passShown);
-        console.log("🧠 discussionStarted:", discussionStarted);
-
-
-        if (roomData.phase !== "playing") {
-            passShown = false;
-        }        
+        console.log("🧠 discussionStarted:", discussionStarted);  
 
         // ✅ AUTO-KICK IF REMOVED
         const stillInRoom = roomData.players.some(p => p.name === playerName);
@@ -370,10 +371,11 @@ function setupRoomListener() {
 
         // ✅ discussion
 
-
-        if (roomData.phase === "discussion") {
-            showDiscussion(); // ✅ ALWAYS SWITCH
+        if (roomData.phase === "discussion" && !discussionStarted) {
+            discussionStarted = true;
+            showDiscussion();
         }
+
 
 
         // ✅ VOTING
@@ -718,12 +720,22 @@ window.addEventListener("DOMContentLoaded", () => {
 
         showScreen("role");
 
-        // ✅ mark player as revealed
+        
+        const readyList = data.readyForDiscussion || [];
         const revealedList = data.revealedPlayers || [];
+
+        const updates = {};
+
+        if (!readyList.includes(playerName)) {
+            updates.readyForDiscussion = [...readyList, playerName];
+        }
+
         if (!revealedList.includes(playerName)) {
-            await updateDoc(roomRef, {
-                revealedPlayers: [...revealedList, playerName]
-            });
+            updates.revealedPlayers = [...revealedList, playerName];
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await updateDoc(roomRef, updates);
         }
 
         const el = document.getElementById("roleContent");
@@ -734,48 +746,33 @@ window.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
 
-        document.getElementById("continueBtn").onclick = async () => {
+        document.getElementById("continueBtn").onclick = () => {
 
             console.log("➡️ Continue clicked");
 
             const btn = document.getElementById("continueBtn");
 
-            // UI update
             btn.disabled = true;
-            
-            const total = roomData.players.length;
-            const ready = roomData.readyForDiscussion?.length || 0;
-
-            btn.innerText = `Waiting... (${ready}/${total})`;
-
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
 
-            
-            const interval = setInterval(() => {
+            const updateUI = () => {
                 const total = roomData.players.length;
                 const ready = roomData.readyForDiscussion?.length || 0;
 
                 btn.innerText = `Waiting... (${ready}/${total})`;
 
+                console.log("⏳ Waiting:", ready, "/", total);
+
                 if (ready === total) {
                     clearInterval(interval);
                 }
-            }, 500);
+            };
 
+            // run immediately once
+            updateUI();
 
-            const roomRef = doc(db, "rooms", roomId);
-
-            // mark player ready (SAFE atomic update)asdas
-            await updateDoc(roomRef, {
-                readyForDiscussion: arrayUnion(playerName)
-            });
-
-            // get fresh snapshot AFTER update
-            const snap = await getDoc(roomRef);
-            const updated = snap.data();
-
-
+            const interval = setInterval(updateUI, 500);
         };
     }
 

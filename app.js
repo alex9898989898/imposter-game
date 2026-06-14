@@ -348,12 +348,16 @@ function setupRoomListener() {
             showDiscussion();
         }
 
-
-
         // ✅ VOTING
-        if (roomData.phase === "voting") {
+        if (
+            roomData.phase === "voting" &&
+            !screens.voting.classList.contains("active")
+        ) {
             showVoting();
+        } else if (roomData.phase === "voting") {
+            updateVotingUI(); // ✅ NEW FUNCTION
         }
+
 
         // ✅ RESULTS
         if (roomData.phase === "results") {
@@ -837,104 +841,111 @@ window.addEventListener("DOMContentLoaded", () => {
     // SHOW VOTING UI
     // ==========================
     function showVoting() {
-    votingStarted = true;
+        votingStarted = true;
 
-    clearGameTimer();
-    showScreen("voting");
-    const container = document.getElementById("voteList");
-    container.innerHTML = "";
+        clearGameTimer();
+        showScreen("voting");
 
-    // ✅ TIMER
-    const timerEl = document.createElement("div");
-    timerEl.id = "voteTimer";
-    timerEl.style.marginBottom = "10px";
-    timerEl.style.fontSize = "20px";
-    container.appendChild(timerEl);
+        const container = document.getElementById("voteList");
+        container.innerHTML = "";
 
-    // ✅ ADD THIS HERE (RIGHT UNDER TIMER)
-    const votes = roomData.votes || {};
+        // ✅ TIMER DISPLAY
+        const timerEl = document.createElement("div");
+        timerEl.id = "voteTimer";
+        timerEl.style.marginBottom = "10px";
+        timerEl.style.fontSize = "20px";
+        container.appendChild(timerEl);
 
-    const info = document.createElement("div");
-    info.style.marginBottom = "10px";
+        // ✅ INFO DISPLAY
+        const info = document.createElement("div");
+        info.id = "voteInfo"; // ✅ IMPORTANT
+        info.style.marginBottom = "10px";
+        container.appendChild(info);
 
-    const votedCount = Object.keys(votes).length;
-    const total = roomData.players.length;
+        // ✅ PLAYER BUTTONS (ONLY ONCE)
+        roomData.players.forEach(p => {
+            if (p.name === playerName) return;
 
-    
-    
-    const votesNow = roomData.votes || {};
-    const votedCountNow = Object.keys(votesNow).length;
+            const btn = document.createElement("button");
+            btn.className = "vote-btn";
+            btn.innerText = p.name;
 
-    info.innerText = `Votes: ${votedCountNow}/${total}`;
-
-
-    container.appendChild(info);
-
-    // ✅ PLAYERS BUTTONS
-    roomData.players.forEach(p => {
-
-        // ✅ SKIP yourself completely
-        if (p.name === playerName) return;
-
-        const btn = document.createElement("button");
-        btn.className = "vote-btn";
-        btn.innerText = p.name;
-
-        const alreadyVoted = votes[playerName];
-
-        if (alreadyVoted === p.name) {
-            btn.style.background = "#22c55e";
-        }
-
-        if (alreadyVoted) {
-            btn.disabled = true;
-            btn.style.opacity = "0.6";
-        } else {
             btn.onclick = () => votePlayer(p.name);
-        }
 
-        container.appendChild(btn);
-    });
+            container.appendChild(btn);
+        });
 
+        startVoteTimer(); // ✅ move timer logic out
+    }
 
-    // ✅ Timer logic
-    timerInterval = setInterval(() => {
+    // ==========================
+    // update Voting UI
+    // ==========================
 
-        
+    function updateVotingUI() {
         const votes = roomData.votes || {};
         const total = roomData.players.length;
 
-        // ✅ if all players voted → finish immediately
-        if (Object.keys(votes).length === total) {
-            clearGameTimer();
-
-            if (isHost && roomData.phase === "voting") {
-                calculateResults();
-            }
-
-            return;
+        const info = document.getElementById("voteInfo");
+        if (info) {
+            info.innerText = `Votes: ${Object.keys(votes).length}/${total}`;
         }
 
-        const start = roomData.voteStarted;
-        if (!start) return;
+        // ✅ update buttons state
+        const buttons = document.querySelectorAll(".vote-btn");
 
-        const elapsed = Math.floor((Date.now() - start) / 1000);
-        const remaining = 60 - elapsed;
+        buttons.forEach(btn => {
+            const name = btn.innerText;
+            const myVote = votes[playerName];
 
-        const el = document.getElementById("voteTimer");
-        if (el) el.innerText = `⏳ ${Math.max(remaining, 0)}s`;
-
-        if (remaining <= 0) {
-            clearGameTimer();
-
-            if (isHost) {
-                calculateResults();
+            if (myVote) {
+                btn.disabled = true;
+                btn.style.opacity = "0.6";
             }
-        }
-    }, 1000);
+
+            if (myVote === name) {
+                btn.style.background = "#22c55e";
+            }
+        });
     }
 
 
+
+    function startVoteTimer() {
+        timerInterval = setInterval(() => {
+
+            const votes = roomData.votes || {};
+            const total = roomData.players.length;
+
+            // ✅ instant finish
+            if (Object.keys(votes).length === total) {
+                clearGameTimer();
+
+                if (isHost && roomData.phase === "voting") {
+                    calculateResults();
+                }
+                return;
+            }
+
+            const start = roomData.voteStarted;
+            if (!start) return;
+
+            const elapsed = Math.floor((Date.now() - start) / 1000);
+            const remaining = 60 - elapsed;
+
+            const el = document.getElementById("voteTimer");
+            if (el) el.innerText = `⏳ ${Math.max(remaining, 0)}s`;
+
+            if (remaining <= 0) {
+                clearGameTimer();
+
+                if (isHost) {
+                    calculateResults();
+                }
+            }
+
+        }, 1000);
+    }
     // ==========================
     // VOTE PLAYER
     // ==========================

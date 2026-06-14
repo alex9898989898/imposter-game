@@ -300,12 +300,17 @@ function setupRoomListener() {
 
         updateLobbyUI();
 
-        if (
-            roomData.phase === "playing" &&
-            !screens.pass.classList.contains("active") &&
-            !screens.role.classList.contains("active")
-        ) {
-            showPassScreen();
+        // ✅ AUTO START DISCUSSION
+        if (roomData.phase === "playing") {
+
+            const ready = roomData.readyForDiscussion || [];
+
+            if (
+                ready.length === roomData.players.length &&
+                isHost
+            ) {
+                startDiscussion();
+            }
         }
 
 
@@ -485,7 +490,14 @@ function setupRoomListener() {
         const savedRoom = localStorage.getItem("roomId");
         const savedPlayer = localStorage.getItem("playerName");
 
+        
+        // ✅ check link first
+        if (quickJoinCheck()) {
+            return; // stop here if link join
+        }
+
         showScreen("start");
+
     }
 
 // ✅ IMPORTANT
@@ -625,15 +637,7 @@ window.addEventListener("DOMContentLoaded", () => {
             const snap = await getDoc(roomRef);
             const updated = snap.data();
 
-            // check start condition ONLY here
-            if (
-                isHost &&
-                updated.readyForDiscussion.length === updated.players.length &&
-                updated.phase === "playing" &&
-                !updated.timeStarted
-            ) {
-                startDiscussion();
-            }
+
         };
     }
 

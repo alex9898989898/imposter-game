@@ -340,8 +340,7 @@ function setupRoomListener() {
 
 
         // ✅ discussion
-        if (
-            roomData.phase === "discussion" &&
+        if (roomData.phase === "discussion" &&
             !screens.discussion.classList.contains("active")
         ) {
             showDiscussion();
@@ -768,13 +767,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
         timerInterval = setInterval(() => {
 
-            const started = roomData?.timeStarted;
-            console.log("timeStarted:", started); // ✅ ADD HERE
 
-            if (!started) return;
+            const started = roomData?.timeStarted || Date.now(); // ✅ fallback
+
+            console.log("timeStarted:", started);
 
             const now = Date.now();
             const elapsed = Math.floor((now - started) / 1000);
+
             const duration = roomData.discussionTime || 120;
 
             timeLeft = Math.max(duration - elapsed, 0);

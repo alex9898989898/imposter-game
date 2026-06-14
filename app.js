@@ -1158,31 +1158,41 @@ window.addEventListener("DOMContentLoaded", () => {
         const revealBtn = document.getElementById("revealRoleBtn");
         const continueBtn = document.getElementById("continueBtn");
 
-        // ✅ reset buttons
+        // ✅ initial state (disabled, yellow)
         revealBtn.disabled = false;
         revealBtn.innerText = "Reveal My Role";
 
-        continueBtn.disabled = true; // ✅ wait until reveal
+        continueBtn.disabled = true;
         continueBtn.innerText = "Continue";
 
-        // ✅ FORCE COLOR
         continueBtn.classList.remove("btn-success");
         continueBtn.classList.add("btn-warning");
 
-        // ✅ reveal enables continue
+        // ✅ AFTER REVEAL → TURN GREEN
         revealBtn.onclick = () => {
             revealMyRole();
-            continueBtn.disabled = false; // ✅ enable after reveal
+
+            continueBtn.disabled = false;
+            continueBtn.innerText = "Continue";
+
+            // ✅ GREEN
+            continueBtn.classList.remove("btn-warning");
+            continueBtn.classList.add("btn-success");
         };
 
-        // ✅ attach ONCE here (not in reveal)
+        // ✅ AFTER CONTINUE → TURN YELLOW + WAITING
         continueBtn.onclick = async () => {
             console.log("➡️ Continue clicked");
 
-            if (continueBtn.disabled) return; // ✅ safety
+            if (continueBtn.disabled) return;
 
             try {
                 continueBtn.disabled = true;
+
+                // ✅ SWITCH TO YELLOW + WAITING TEXT
+                continueBtn.innerText = "Waiting...";
+                continueBtn.classList.remove("btn-success");
+                continueBtn.classList.add("btn-warning");
 
                 await updateDoc(doc(db, "rooms", roomId), {
                     readyForDiscussion: arrayUnion(playerName)
@@ -1194,6 +1204,12 @@ window.addEventListener("DOMContentLoaded", () => {
                 console.error(err);
 
                 continueBtn.disabled = false;
+
+                // ✅ back to GREEN if failed
+                continueBtn.innerText = "Continue";
+                continueBtn.classList.remove("btn-warning");
+                continueBtn.classList.add("btn-success");
+
                 toast("Failed to continue");
             }
         };

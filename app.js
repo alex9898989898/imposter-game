@@ -26,6 +26,7 @@
     let votingStarted = false;
     let unsubscribeRoom = null;
     let timerInterval = null;
+    let timeLeft = 0; //✅ IMPORTANT
 
     function clearGameTimer() {
         if (timerInterval) {

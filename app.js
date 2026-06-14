@@ -338,10 +338,15 @@ function setupRoomListener() {
 
         }
 
-        // ✅ DISCUSSION
-        if (roomData.phase === "discussion") {
+
+        // ✅ discussion
+        if (
+            roomData.phase === "discussion" &&
+            !screens.discussion.classList.contains("active")
+        ) {
             showDiscussion();
         }
+
 
         // ✅ VOTING
         if (roomData.phase === "voting") {

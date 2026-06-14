@@ -327,12 +327,15 @@ function setupRoomListener() {
         if (roomData.phase === "playing") {
             const ready = roomData.readyForDiscussion || [];
 
-            if (
-                ready.length === roomData.players.length &&
-                isHost
-            ) {
-                startDiscussion();
-            }
+            
+        if (
+            ready.length === roomData.players.length &&
+            isHost &&
+            !roomData.timeStarted   // ✅ ONLY RUN ONCE
+        ) {
+            startDiscussion();
+        }
+
         }
 
         // ✅ DISCUSSION
@@ -761,6 +764,7 @@ window.addEventListener("DOMContentLoaded", () => {
         timerInterval = setInterval(() => {
 
             const started = roomData?.timeStarted;
+            console.log("timeStarted:", started); // ✅ ADD HERE
 
             if (!started) return;
 

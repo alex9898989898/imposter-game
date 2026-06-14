@@ -814,7 +814,8 @@
     // ==========================
     // SHOW RESULTS
     // ==========================
-   function showResults() {
+  
+    function showResults() {
         showScreen("results");
 
         const votes = roomData.votes || {};
@@ -831,22 +832,43 @@
             }
         });
 
-        // ✅ CASE 1: at least 1 correct guess
+        // ✅ create badges (NEW ✨)
+        const winnerHTML = winners.map(name =>
+            `<span class="badge">${name}</span>`
+        ).join("");
+
+        // ✅ CASE 1: players guessed correctly
         if (winners.length > 0) {
 
             content.innerHTML = `
-                <h3>🎯 Players found the impostor!</h3>
-                <p>Impostor was: ${impostor}</p>
-                <p>✅ Winners: ${winners.join(", ")}</p>
+                <h2 class="result-title">🎯 Impostor Found!</h2>
+
+                <div class="result-row">
+                    <span>🕵️ Impostor</span>
+                    <strong>${impostor}</strong>
+                </div>
+
+                <div class="result-row winner">
+                    <span>✅ Winners</span>
+                    <div>${winnerHTML}</div>
+                </div>
             `;
 
         } else {
-            // ✅ CASE 2: nobody guessed impostor
+            // ✅ CASE 2: nobody guessed → impostor wins
 
             content.innerHTML = `
-                <h3>🕵️ Nobody found the impostor!</h3>
-                <p>Impostor was: ${impostor}</p>
-                <p>👑 Winner: ${impostor}</p>
+                <h2 class="result-title">🕵️ Nobody Found the Impostor</h2>
+
+                <div class="result-row">
+                    <span>🕵️ Impostor</span>
+                    <strong>${impostor}</strong>
+                </div>
+
+                <div class="result-row loser">
+                    <span>👑 Winner</span>
+                    <div><span class="badge impostor">${impostor}</span></div>
+                </div>
             `;
         }
 

@@ -317,9 +317,16 @@ function setupRoomListener() {
         // ✅ PASS SCREEN
 
 
-        if (roomData.phase === "playing" && !roomData.timeStarted) {
+        
+        if (
+            roomData.phase === "playing" &&
+            !roomData.timeStarted &&
+            !screens.pass.classList.contains("active") &&
+            !screens.role.classList.contains("active")
+        ) {
             showPassScreen();
         }
+
 
 
 
@@ -343,10 +350,12 @@ function setupRoomListener() {
 
 
         // ✅ discussion
+
         if (
             roomData.phase === "discussion" &&
-            !timerInterval   // ✅ KEY FIX
-        ) {
+            !screens.discussion.classList.contains("active")
+        )
+        {
             showDiscussion();
         }
 
@@ -359,6 +368,16 @@ function setupRoomListener() {
         } else if (roomData.phase === "voting") {
             updateVotingUI(); // ✅ NEW FUNCTION
         }
+
+        
+        if (roomData.phase === "lobby") {
+            const me = roomData.players.find(p => p.name === playerName);
+
+            if (me && me.ready) {
+                // do nothing, UI already correct
+            }
+        }
+
 
 
         // ✅ RESULTS
@@ -476,19 +495,19 @@ function setupRoomListener() {
     // TOGGLE READY
     // ==========================
     async function toggleReady() {
+
+        if (roomData.phase !== "lobby") return; // ✅ KEY FIX
+
         const btn = document.getElementById("readyBtn");
 
-        // ✅ disable instantly
         btn.disabled = true;
         btn.innerText = "✅ Ready";
-        btn.classList.remove("btn-success");
-        btn.classList.add("btn-warning");
 
         const roomRef = doc(db, "rooms", roomId);
 
         const updated = roomData.players.map(p => {
             if (p.name === playerName) {
-                return { ...p, ready: true }; // ✅ set ONLY true
+                return { ...p, ready: true };
             }
             return p;
         });
@@ -1077,10 +1096,10 @@ window.addEventListener("DOMContentLoaded", () => {
         const resetPlayers =
             roomData.players.map(p => ({
                 ...p,
-                ready: false
+                ready: false  // ✅ ONLY HERE but controlled
             }));
 
-        await updateDoc(roomRef,{
+        await updateDoc(roomRef, {
             phase: "lobby",
             players: resetPlayers,
             votes: {},
@@ -1093,11 +1112,10 @@ window.addEventListener("DOMContentLoaded", () => {
             voteStarted: null
         });
 
-        // ✅ RESET LOCAL STATE
+        clearGameTimer(); // ✅ IMPORTANT
+
         discussionStarted = false;
         votingStarted = false;
-
-        document.body.classList.remove("win", "lose");
 
         showLobby();
     }

@@ -840,7 +840,7 @@
 
         let winners = [];
 
-        // ✅ CASE 1: Impostor caught
+        // ✅ CASE 1: impostor was caught
         if (eliminated === roomData.impostor) {
 
             Object.keys(votes).forEach(player => {
@@ -852,17 +852,17 @@
             content.innerHTML = `
                 <h3>🎉 Impostor caught!</h3>
                 <p>Impostor was: ${roomData.impostor}</p>
-                <p>Winners: ${winners.join(", ")}</p>
+                <p>✅ Winners: ${winners.join(", ") || "None"}</p>
             `;
 
         } else {
-            // ❌ CASE 2: Wrong vote
+            // ✅ CASE 2: impostor NOT caught → impostor wins
             winners = [roomData.impostor];
 
             content.innerHTML = `
                 <h3>❌ Wrong vote!</h3>
                 <p>Impostor was: ${roomData.impostor}</p>
-                <p>Winner: ${roomData.impostor}</p>
+                <p>👑 Winner: ${roomData.impostor}</p>
             `;
         }
 

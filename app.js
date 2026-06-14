@@ -274,6 +274,8 @@ function setupRoomListener() {
 
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
+
+
         if (!snap.exists()) {
             localStorage.removeItem("roomId");
             localStorage.removeItem("playerName");
@@ -285,12 +287,17 @@ function setupRoomListener() {
 
         const data = snap.data();
 
+
         console.log("Snapshot:", data);
 
         // ✅ SAFETY CHECK
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
+
+        if (roomData.phase !== "playing") {
+            passShown = false;
+        }        
 
         // ✅ AUTO-KICK IF REMOVED
         const stillInRoom = roomData.players.some(p => p.name === playerName);
@@ -352,13 +359,11 @@ function setupRoomListener() {
 
         // ✅ discussion
 
-        if (
-            roomData.phase === "discussion" &&
-            !screens.discussion.classList.contains("active")
-        )
-        {
-            showDiscussion();
+
+        if (roomData.phase === "discussion") {
+            showDiscussion(); // ✅ ALWAYS SWITCH
         }
+
 
         // ✅ VOTING
         if (

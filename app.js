@@ -340,11 +340,13 @@ function setupRoomListener() {
 
 
         // ✅ discussion
-        if (roomData.phase === "discussion" &&
-            !screens.discussion.classList.contains("active")
+        if (
+            roomData.phase === "discussion" &&
+            !timerInterval   // ✅ KEY FIX
         ) {
             showDiscussion();
         }
+
 
 
         // ✅ VOTING
@@ -768,7 +770,14 @@ window.addEventListener("DOMContentLoaded", () => {
         timerInterval = setInterval(() => {
 
 
-            const started = roomData?.timeStarted || Date.now(); // ✅ fallback
+            
+            const started = roomData?.timeStarted;
+
+            if (!started) {
+                console.log("❌ timeStarted missing");
+                return;
+            }
+
 
             console.log("timeStarted:", started);
 

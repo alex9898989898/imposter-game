@@ -348,8 +348,11 @@
 
         document.getElementById("roomTitle").innerText = roomId;
 
+        // ✅ READY COUNT HERE
+        const readyCount = roomData.players.filter(p => p.ready).length;
+
         document.getElementById("playerCount").innerText =
-            roomData.players.length + " Players";
+            `${readyCount}/${roomData.players.length} Ready`;
 
         const list = document.getElementById("playersList");
         list.innerHTML = "";
@@ -367,17 +370,42 @@
 
         document.getElementById("hostBadge").style.display =
             isHost ? "block" : "none";
+
+        const me = roomData.players.find(p => p.name === playerName);
+        const btn = document.getElementById("readyBtn");
+
+        if (btn) {
+            if (me && me.ready) {
+                btn.disabled = true;
+                btn.innerText = "✅ Ready";
+                btn.classList.remove("btn-success");
+                btn.classList.add("btn-warning");
+            } else {
+                btn.disabled = false;
+                btn.innerText = "✅ Ready";
+                btn.classList.remove("btn-warning");
+                btn.classList.add("btn-success");
+            }
+        }
     }
 
     // ==========================
     // TOGGLE READY
     // ==========================
     async function toggleReady() {
+        const btn = document.getElementById("readyBtn");
+
+        // ✅ disable instantly
+        btn.disabled = true;
+        btn.innerText = "✅ Ready";
+        btn.classList.remove("btn-success");
+        btn.classList.add("btn-warning");
+
         const roomRef = doc(db, "rooms", roomId);
 
         const updated = roomData.players.map(p => {
             if (p.name === playerName) {
-            return { ...p, ready: !p.ready };
+                return { ...p, ready: true }; // ✅ set ONLY true
             }
             return p;
         });

@@ -757,12 +757,12 @@ function setupRoomListener() {
     const total = roomData.players.length;
 
     
-    setInterval(() => {
-        const votes = roomData.votes || {};
-        const votedCount = Object.keys(votes).length;
+    
+    const votesNow = roomData.votes || {};
+    const votedCountNow = Object.keys(votesNow).length;
 
-        info.innerText = `Votes: ${votedCount}/${total}`;
-    }, 300);
+    info.innerText = `Votes: ${votedCountNow}/${total}`;
+
 
     container.appendChild(info);
 
@@ -794,8 +794,6 @@ function setupRoomListener() {
 
 
     // ✅ Timer logic
-    clearGameTimer();
-
     timerInterval = setInterval(() => {
         const start = roomData.voteStarted;
         if (!start) return;

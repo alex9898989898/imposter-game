@@ -25,7 +25,14 @@
     let discussionStarted = false;
     let votingStarted = false;
     let unsubscribeRoom = null;
+    let timerInterval = null;
 
+    function clearGameTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
 
     // ==========================
     // DOM HELPERS
@@ -71,9 +78,10 @@
     // RANDOM ROOM ID
     // ==========================
     function generateRoomId() {
-        return crypto.randomUUID()
-            .slice(0, 6)
-            .toUpperCase();
+        if (crypto?.randomUUID) {
+            return crypto.randomUUID().slice(0, 6).toUpperCase();
+        }
+        return Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
 
@@ -264,7 +272,17 @@ function setupRoomListener() {
 
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
-        if (!snap.exists()) return;
+        if (!snap.exists()) {
+
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("playerName");
+
+            toast("Room closed");
+
+            location.reload();
+
+            return;
+        }
 
         console.log("Snapshot:", snap.data());
 
@@ -273,7 +291,12 @@ function setupRoomListener() {
         if (!data || !data.phase) return;
 
         roomData = data;
+        const previousHost = isHost;
         isHost = roomData.host === playerName;
+
+        if (previousHost !== isHost) {
+            showLobby();
+        }
 
         updateLobbyUI();
 
@@ -443,36 +466,37 @@ function setupRoomListener() {
     // ==========================
     console.log("APP STARTING...");
     async function startApp() {
-      
-    const roomRef = doc(db, "rooms", savedRoom);
-    const snap = await getDoc(roomRef);
 
-    if (snap.exists()) {
-        roomId = savedRoom;
-        playerName = savedPlayer;
+        await loadWords();
 
-        setupRoomListener();
-        showLobby();
-        return;
-    } else {
-        localStorage.removeItem("roomId");
-        localStorage.removeItem("playerName");
-    }  
-    showScreen("loading");
+        const savedRoom = localStorage.getItem("roomId");
+        const savedPlayer = localStorage.getItem("playerName");
 
-    await loadWords();
+        if (savedRoom && savedPlayer) {
 
-    setTimeout(() => {
-        if (!quickJoinCheck()) showScreen("start");
-    }, 800);
+            const roomRef = doc(db, "rooms", savedRoom);
+            const snap = await getDoc(roomRef);
 
-    // ✅ ADD THIS PART
-    document.getElementById("createRoomBtn").onclick = createRoom;
-    document.getElementById("joinRoomBtn").onclick = joinRoom;
+            if (snap.exists()) {
+
+                roomId = savedRoom;
+                playerName = savedPlayer;
+
+                setupRoomListener();
+
+                setTimeout(() => {
+                    showLobby();
+                }, 300);
+
+                return;
+            }
+
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("playerName");
+        }
+
+        showScreen("start");
     }
-
-    startApp();
-
 
     // ==========================
     // GAME STATE (PART 2)
@@ -505,11 +529,16 @@ function setupRoomListener() {
     }
     console.log("WORDS LOADED");
 
+        
+    function showPassScreen() {
+            showScreen("pass");
+
+            document.getElementById("revealRoleBtn").onclick = revealMyRole;
+    }
 
     // ==========================
     // START GAME (HOST ONLY)
     // ==========================
-
     async function startGame() {
 
         if (!isHost) return;
@@ -517,13 +546,37 @@ function setupRoomListener() {
         if (roomData.started) {
             return toast("Game already started");
         }
-        
-        function showPassScreen() {
-            showScreen("pass");
 
-            document.getElementById("revealRoleBtn").onclick = revealMyRole;
+        const readyPlayers =
+            roomData.players.filter(p => p.ready);
+
+        if (readyPlayers.length < 3) {
+            return toast("Need at least 3 ready players");
         }
 
+        if (!words.length) {
+            return toast("No words loaded");
+        }
+        const randomWord =
+            words[Math.floor(Math.random() * words.length)];
+
+        const randomPlayer =
+            roomData.players[
+                Math.floor(Math.random() * roomData.players.length)
+            ];
+
+        const roomRef = doc(db, "rooms", roomId);
+
+        await updateDoc(roomRef, {
+            started: true,
+            phase: "playing",
+            word: randomWord,
+            impostor: randomPlayer.name,
+            revealedPlayers: [],
+            readyForDiscussion: [],
+            votes: {},
+            voteStarted: null
+        });
     }
     // ==========================
     // SHOW PASS SCREEN
@@ -576,13 +629,9 @@ function setupRoomListener() {
             let ready = updated.readyForDiscussion || [];
             let revealed = updated.revealedPlayers || [];
 
-            // ✅ add to ready list
-            if (!ready.includes(playerName)) {
-                ready.push(playerName);
-
-                await updateDoc(roomRef, {
-                    readyForDiscussion: ready
-                });
+            await updateDoc(roomRef, {
+                readyForDiscussion: arrayUnion(playerName)
+            });
             }
 
             // ✅ check start condition (FINAL)
@@ -590,7 +639,9 @@ function setupRoomListener() {
                 isHost &&
                 ready.length === updated.players.length &&
                 updated.phase === "playing"
-            ) {
+                && !updated.timeStarted
+            ) 
+            {
                 startDiscussion();
             }
         };
@@ -607,7 +658,9 @@ function setupRoomListener() {
         try {
 
             await updateDoc(roomRef, {
-                phase: "discussion"
+                phase: "discussion",
+                timeStarted: Date.now(),
+                discussionTime: 120 //change time - disc
             });
 
         } catch (err) {
@@ -626,38 +679,27 @@ function setupRoomListener() {
     // ==========================
     function showDiscussion() {
 
-        // ✅ PREVENT DOUBLE START
         if (discussionStarted) return;
         discussionStarted = true;
 
         showScreen("discussion");
 
-        clearInterval(timerInterval);
+        clearGameTimer();
 
         timerInterval = setInterval(() => {
-            const started = roomData.timeStarted;
-
-            if (!started) return;
+            if (!roomData?.timeStarted) return;
 
             const now = Date.now();
-            const elapsed = Math.floor((now - started) / 1000);
-
+            const elapsed = Math.floor((now - roomData.timeStarted) / 1000);
             const duration = roomData.discussionTime || 120;
-            const remaining = duration - elapsed;
 
-            timeLeft = remaining > 0 ? remaining : 0;
-
+            timeLeft = Math.max(duration - elapsed, 0);
             updateTimer();
 
-
             if (timeLeft <= 0) {
-                clearInterval(timerInterval);
+                clearGameTimer();
 
-                // ✅ extra safety check
-                if (
-                    isHost &&
-                    roomData.phase === "discussion"
-                ) {
+                if (isHost && roomData.phase === "discussion") {
                     startVoting();
                 }
             }
@@ -699,11 +741,10 @@ function setupRoomListener() {
     // SHOW VOTING UI
     // ==========================
     function showVoting() {
-    
-    // REMOVE: if (votingStarted) return;
+    if (votingStarted) return;
     votingStarted = true;
 
-    clearInterval(timerInterval); // ✅ VERY IMPORTANT
+    clearGameTimer();
     showScreen("voting");
     const container = document.getElementById("voteList");
     container.innerHTML = "";
@@ -755,24 +796,24 @@ function setupRoomListener() {
 
 
     // ✅ Timer logic
-    clearInterval(timerInterval);
+    clearGameTimer();
 
     timerInterval = setInterval(() => {
         const start = roomData.voteStarted;
-        const now = Date.now();
+        if (!start) return;
 
-        const elapsed = Math.floor((now - start) / 1000);
+        const elapsed = Math.floor((Date.now() - start) / 1000);
         const remaining = 60 - elapsed;
 
-        document.getElementById("voteTimer").innerText =
-        `⏳ ${remaining > 0 ? remaining : 0}s`;
+        const el = document.getElementById("voteTimer");
+        if (el) el.innerText = `⏳ ${Math.max(remaining, 0)}s`;
 
         if (remaining <= 0) {
-        clearInterval(timerInterval);
+            clearGameTimer();
 
-        if (isHost) {
-            calculateResults();
-        }
+            if (isHost) {
+                calculateResults();
+            }
         }
     }, 1000);
     }
@@ -807,12 +848,9 @@ function setupRoomListener() {
 
         const roomRef = doc(db, "rooms", roomId);
 
-        // ✅ BUILD UPDATED VOTES (single source of truth)
-        const updatedVotes = { ...(roomData.votes || {}) };
-        updatedVotes[playerName] = target;
-
-        // ✅ SINGLE UPDATE
-        await updateDoc(roomRef, { votes: updatedVotes });
+        await updateDoc(roomRef, {
+            [`votes.${playerName}`]: target
+        });
 
     }
 
@@ -903,16 +941,23 @@ function setupRoomListener() {
     async function nextRound() {
         const roomRef = doc(db, "rooms", roomId);
 
-        await updateDoc(roomRef, {
+        const resetPlayers =
+            roomData.players.map(p => ({
+                ...p,
+                ready: false
+            }));
+
+        await updateDoc(roomRef,{
             phase: "lobby",
+            players: resetPlayers,
             votes: {},
             impostor: null,
             word: null,
             started: false,
-            readyForDiscussion: [],      // ✅ add this
-            revealedPlayers: []      // ✅ VERY important reset
-
-
+            readyForDiscussion: [],
+            revealedPlayers: [],
+            timeStarted: null,
+            voteStarted: null
         });
 
         // ✅ RESET LOCAL STATE
@@ -923,4 +968,4 @@ function setupRoomListener() {
 
         showLobby();
     }
-
+startApp();

@@ -759,6 +759,18 @@
     // ==========================
 
     async function votePlayer(target) {
+    
+    // ✅ INSTANT UI feedback (before Firebase updates)
+    const buttons = document.querySelectorAll(".vote-btn");
+
+    buttons.forEach(btn => {
+        if (btn.innerText === target) {
+            btn.style.background = "#22c55e"; // green
+        }
+        btn.disabled = true; // disable all buttons after voting
+        btn.style.opacity = "0.6";
+    });
+
     if (roomData.votes && roomData.votes[playerName]) {
         return toast("You already voted");
     }

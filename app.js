@@ -162,7 +162,13 @@
 
     const qr = document.getElementById("qrCode");
     qr.innerHTML = "";
-    new QRCode(qr, link);
+    
+    new QRCode(qr, {
+        text: link,
+        width: 120,   // 🔽 change size here
+        height: 120   // 🔽 change size here
+    });
+
     }
 
 

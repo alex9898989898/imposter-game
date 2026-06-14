@@ -27,6 +27,7 @@
     let unsubscribeRoom = null;
     let timerInterval = null;
     let timeLeft = 0; //✅ IMPORTANT
+    let passShown = false;
 
     function clearGameTimer() {
         if (timerInterval) {
@@ -321,9 +322,9 @@ function setupRoomListener() {
         if (
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
-            !screens.pass.classList.contains("active") &&
-            !screens.role.classList.contains("active")
+            !passShown
         ) {
+            passShown = true;
             showPassScreen();
         }
 
@@ -680,6 +681,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
 
     async function revealMyRole() {
+        document.getElementById("revealRoleBtn").disabled = true;
         console.log("Reveal clicked ✅");
         const data = roomData;
         if (!data) return;
@@ -1091,6 +1093,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // NEXT ROUND
     // ==========================
     async function nextRound() {
+        passShown = false;
         const roomRef = doc(db, "rooms", roomId);
 
         const resetPlayers =

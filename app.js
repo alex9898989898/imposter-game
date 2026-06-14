@@ -307,11 +307,11 @@
             }
 
             // ✅ ONLY start when ALL revealed + ALL ready
+            
             if (
                 readyList.length === roomData.players.length &&
-                revealed.length === roomData.players.length &&
                 roomData.phase === "playing"
-            ) {
+            ){
                 if (isHost) {
                     startDiscussion();
                 }

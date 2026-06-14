@@ -784,31 +784,6 @@ window.addEventListener("DOMContentLoaded", () => {
         } else {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
-
-        document.getElementById("continueBtn").onclick = async () => {
-
-            const btn = document.getElementById("continueBtn");
-
-            try {
-                btn.disabled = true;
-
-                await updateDoc(doc(db, "rooms", roomId), {
-                    readyForDiscussion: arrayUnion(playerName)
-                });
-
-                console.log("✅ READY SENT:", playerName);
-
-            } catch (err) {
-                console.error(err);
-
-                btn.disabled = false;
-                btn.innerText = "Continue";
-
-                toast("Failed to continue");
-            }
-        };
-                
-
     }
 
     // ==========================
@@ -1181,12 +1156,45 @@ window.addEventListener("DOMContentLoaded", () => {
         showScreen("pass");
 
         const revealBtn = document.getElementById("revealRoleBtn");
+        const continueBtn = document.getElementById("continueBtn");
+
+        // ✅ reset buttons
         revealBtn.disabled = false;
         revealBtn.innerText = "Reveal My Role";
 
-        const continueBtn = document.getElementById("continueBtn");
-        continueBtn.disabled = false;
+        continueBtn.disabled = true; // ✅ wait until reveal
         continueBtn.innerText = "Continue";
 
-        revealBtn.onclick = revealMyRole;
+        // ✅ FORCE COLOR
+        continueBtn.classList.remove("btn-success");
+        continueBtn.classList.add("btn-warning");
+
+        // ✅ reveal enables continue
+        revealBtn.onclick = () => {
+            revealMyRole();
+            continueBtn.disabled = false; // ✅ enable after reveal
+        };
+
+        // ✅ attach ONCE here (not in reveal)
+        continueBtn.onclick = async () => {
+            console.log("➡️ Continue clicked");
+
+            if (continueBtn.disabled) return; // ✅ safety
+
+            try {
+                continueBtn.disabled = true;
+
+                await updateDoc(doc(db, "rooms", roomId), {
+                    readyForDiscussion: arrayUnion(playerName)
+                });
+
+                console.log("✅ READY SENT:", playerName);
+
+            } catch (err) {
+                console.error(err);
+
+                continueBtn.disabled = false;
+                toast("Failed to continue");
+            }
+        };
     }

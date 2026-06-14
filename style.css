@@ -362,3 +362,17 @@ body {
     background: rgba(239,68,68,0.15);
     border: 1px solid #ef4444;
 }
+
+
+#qrCode {
+    display: flex;
+    justify-content: center;   /* ✅ center horizontally */
+    align-items: center;
+    margin-top: 15px;
+}
+
+#qrCode img {
+    display: block;
+    margin: 0 auto;
+}
+

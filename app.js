@@ -824,28 +824,40 @@
     // SHOW RESULTS
     // ==========================
     function showResults(eliminated) {
+        showScreen("results");
 
-    votingStarted = false;
-    showScreen("results");
+        const votes = roomData.votes || {};
+        const content = document.getElementById("resultsContent");
 
-    const content = document.getElementById("resultsContent");
+        let winners = [];
 
-    let text = "";
+        // ✅ CASE 1: Impostor caught
+        if (eliminated === roomData.impostor) {
 
-    if (eliminated === roomData.impostor) {
-        text = "🎉 Impostor was caught!";
-    } else {
-        text = "❌ Wrong vote! Impostor wins!";
-    }
+            Object.keys(votes).forEach(player => {
+                if (votes[player] === roomData.impostor) {
+                    winners.push(player);
+                }
+            });
 
-    content.innerHTML = `
-        <h3>${text}</h3>
-        <p>Impostor was: ${roomData.impostor}</p>
-        <p>Word was: ${roomData.word}</p>
-    `;
+            content.innerHTML = `
+                <h3>🎉 Impostor caught!</h3>
+                <p>Impostor was: ${roomData.impostor}</p>
+                <p>Winners: ${winners.join(", ")}</p>
+            `;
 
-    document.getElementById("nextRoundBtn").onclick =
-        nextRound;
+        } else {
+            // ❌ CASE 2: Wrong vote
+            winners = [roomData.impostor];
+
+            content.innerHTML = `
+                <h3>❌ Wrong vote!</h3>
+                <p>Impostor was: ${roomData.impostor}</p>
+                <p>Winner: ${roomData.impostor}</p>
+            `;
+        }
+
+        document.getElementById("nextRoundBtn").onclick = nextRound;
     }
 
 

@@ -291,39 +291,30 @@
             }
 
             // ✅ 6. READY LOGIC
-            if (roomData.readyForDiscussion) {
-                const readyList = roomData.readyForDiscussion;
+            const readyList = roomData.readyForDiscussion || [];
+            const revealed = roomData.revealedPlayers || [];
 
-                // 🔘 If this player already clicked Continue
+            // 🔘 Update button if this player already clicked Continue
+            if (readyList.includes(playerName)) {
+                const btn = document.getElementById("continueBtn");
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
 
-                if (readyList.includes(playerName)) {
-                    const btn = document.getElementById("continueBtn");
-                    if (btn) {
-                        btn.disabled = true;
-
-                        // ✅ THIS IS THE LINE
-                        btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
-
-                        btn.classList.remove("btn-primary");
-                        btn.classList.add("btn-warning");
-                    }
+                    btn.classList.remove("btn-primary");
+                    btn.classList.add("btn-warning");
                 }
+            }
 
-
-                // ✅ All players ready → host starts discussion
-                const readyList = roomData.readyForDiscussion || [];
-                const revealed = roomData.revealedPlayers || [];
-
-                if (
-                    readyList.length === roomData.players.length &&
-                    revealed.length === roomData.players.length &&
-                    roomData.phase === "playing"
-                ) {
-                    if (isHost) {
-                        startDiscussion();
-                    }
+            // ✅ ONLY start when ALL revealed + ALL ready
+            if (
+                readyList.length === roomData.players.length &&
+                revealed.length === roomData.players.length &&
+                roomData.phase === "playing"
+            ) {
+                if (isHost) {
+                    startDiscussion();
                 }
-
             }
         });
     }

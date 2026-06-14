@@ -338,18 +338,32 @@ function setupRoomListener() {
 
         updateLobbyUI();
 
-        // ✅ PASS SCREEN
+                // ✅ PASS SCREEN
 
 
-        
+                // 🔍 DEBUG PASS CHECK
+        console.log("CHECK PASS:", {
+            phase: roomData.phase,
+            timeStarted: roomData.timeStarted,
+            passShown
+        });
 
 
+
+        // 🔍 DEBUG PASS CHECK
+        console.log("CHECK PASS:", {
+            phase: roomData.phase,
+            timeStarted: roomData.timeStarted,
+            passShown
+        });
+
+        // ✅ PASS SCREEN (ONLY ONE!)
         if (
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
             !passShown
         ) {
-            console.log("📺 NEW ROUND PASS SCREEN");
+            console.log("📺 SHOW PASS SCREEN ONCE");
 
             passShown = true;
             showPassScreen();
@@ -400,13 +414,14 @@ function setupRoomListener() {
         }
 
         
-        if (roomData.phase === "lobby") {
-            const me = roomData.players.find(p => p.name === playerName);
+        
+        if (roomData.phase === "lobby" && roomData.started === false) {
+            passShown = false;
+            discussionStarted = false;
 
-            if (me && me.ready) {
-                // do nothing, UI already correct
-            }
+            console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
+
 
 
 

@@ -617,31 +617,30 @@ function setupRoomListener() {
 
             const btn = document.getElementById("continueBtn");
 
-            // ✅ UI update
+            // UI update
             btn.disabled = true;
-            btn.innerText = `Waiting (1/${roomData.players.length})`;
+            btn.innerText = "Waiting...";
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
 
-            const snap = await getDoc(roomRef);
-            const updated = snap.data();
+            const roomRef = doc(db, "rooms", roomId);
 
-            let ready = updated.readyForDiscussion || [];
-            let revealed = updated.revealedPlayers || [];
-
+            // mark player ready (SAFE atomic update)
             await updateDoc(roomRef, {
                 readyForDiscussion: arrayUnion(playerName)
             });
-            }
 
-            // ✅ check start condition (FINAL)
+            // get fresh snapshot AFTER update
+            const snap = await getDoc(roomRef);
+            const updated = snap.data();
+
+            // check start condition ONLY here
             if (
                 isHost &&
-                ready.length === updated.players.length &&
-                updated.phase === "playing"
-                && !updated.timeStarted
-            ) 
-            {
+                updated.readyForDiscussion.length === updated.players.length &&
+                updated.phase === "playing" &&
+                !updated.timeStarted
+            ) {
                 startDiscussion();
             }
         };

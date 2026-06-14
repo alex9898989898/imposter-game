@@ -772,7 +772,7 @@ window.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
 
-       document.getElementById("continueBtn").onclick = async () => {
+        document.getElementById("continueBtn").onclick = async () => {
 
             console.log("➡️ Continue clicked");
 
@@ -786,30 +786,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
             const readyList = roomData.readyForDiscussion || [];
 
-            // ✅ ONLY mark ready here
+            // ✅ THIS IS THE CRITICAL PART
             if (!readyList.includes(playerName)) {
                 await updateDoc(roomRef, {
                     readyForDiscussion: [...readyList, playerName]
                 });
+                console.log("✅ ADDED TO READY:", playerName);
             }
-
-            // ✅ UI waiting display
-            const updateUI = () => {
-                const total = roomData.players.length;
-                const ready = roomData.readyForDiscussion?.length || 0;
-
-                btn.innerText = `Waiting... (${ready}/${total})`;
-
-                console.log("⏳ Waiting:", ready, "/", total);
-
-                if (ready === total) {
-                    clearInterval(interval);
-                }
-            };
-
-            updateUI();
-            const interval = setInterval(updateUI, 500);
         };
+        
 
     }
 

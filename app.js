@@ -272,6 +272,8 @@ function setupRoomListener() {
 
     const roomRef = doc(db, "rooms", roomId);
 
+
+    console.log("=================================");
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
 
@@ -294,6 +296,13 @@ function setupRoomListener() {
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
+        
+        console.log("🧠 PHASE:", roomData.phase);
+        console.log("🧠 timeStarted:", roomData.timeStarted);
+        console.log("🧠 readyForDiscussion:", roomData.readyForDiscussion);
+        console.log("🧠 passShown:", passShown);
+        console.log("🧠 discussionStarted:", discussionStarted);
+
 
         if (roomData.phase !== "playing") {
             passShown = false;
@@ -330,9 +339,11 @@ function setupRoomListener() {
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
             !passShown
+            
         ) {
             passShown = true;
             showPassScreen();
+            console.log("📺 SHOW PASS SCREEN");
         }
 
 
@@ -700,6 +711,11 @@ window.addEventListener("DOMContentLoaded", () => {
             gameWord = data.word;
         }
 
+        
+        console.log("👀 Reveal clicked");
+        console.log("👀 My role:", myRole);
+
+
         showScreen("role");
 
         // ✅ mark player as revealed
@@ -719,6 +735,8 @@ window.addEventListener("DOMContentLoaded", () => {
         }
 
         document.getElementById("continueBtn").onclick = async () => {
+
+            console.log("➡️ Continue clicked");
 
             const btn = document.getElementById("continueBtn");
 
@@ -768,6 +786,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     async function startDiscussion() {
         const roomRef = doc(db, "rooms", roomId);
+        console.log("🚀 STARTING DISCUSSION (HOST)");
 
         try {
 

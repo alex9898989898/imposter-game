@@ -312,8 +312,7 @@ function setupRoomListener() {
             }
         }
         
-        if (roomData.phase === "playing") {
-            // ✅ ensure fresh round state
+        if (roomData.phase !== "discussion") {
             discussionStarted = false;
         }
 
@@ -683,13 +682,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
         
 
-    function showPassScreen() {
-        clearGameTimer();   // ✅ STOP any old timer
-        showScreen("pass");
-
-        document.getElementById("revealRoleBtn").onclick = revealMyRole;
-    }
-
 
     // ==========================
     // START GAME (HOST ONLY)
@@ -787,7 +779,7 @@ window.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
 
-       document.getElementById("continueBtn").onclick = async () => {
+        document.getElementById("continueBtn").onclick = async () => {
 
             console.log("➡️ Continue clicked");
 
@@ -807,10 +799,9 @@ window.addEventListener("DOMContentLoaded", () => {
                 console.log("✅ ADDED TO READY:", playerName);
             }
 
-            // ✅ only initial UI
             btn.innerText = "Waiting...";
         };
-        
+                
 
     }
 
@@ -1177,4 +1168,19 @@ window.addEventListener("DOMContentLoaded", () => {
         console.log("🔄 NEXT ROUND RESET");
 
         showLobby();
+    }
+
+    function showPassScreen() {
+        clearGameTimer();
+        showScreen("pass");
+
+        const revealBtn = document.getElementById("revealRoleBtn");
+        revealBtn.disabled = false;
+        revealBtn.innerText = "Reveal My Role";
+
+        const continueBtn = document.getElementById("continueBtn");
+        continueBtn.disabled = false;
+        continueBtn.innerText = "Continue";
+
+        revealBtn.onclick = revealMyRole;
     }

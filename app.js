@@ -24,6 +24,7 @@
     let isHost = false;
     let discussionStarted = false;
     let votingStarted = false;
+    let unsubscribeRoom = null;
 
 
     // ==========================
@@ -70,12 +71,9 @@
     // RANDOM ROOM ID
     // ==========================
     function generateRoomId() {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let id = "";
-    for (let i = 0; i < 6; i++) {
-        id += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return id;
+        return crypto.randomUUID()
+            .slice(0, 6)
+            .toUpperCase();
     }
 
 
@@ -92,34 +90,38 @@
     // CREATE ROOM
     // ==========================
     window.createRoom = async function () {
-    playerName = document.getElementById("playerName").value.trim();
 
-    if (!playerName) return toast("Enter name");
+        playerName = document.getElementById("playerName").value.trim();
 
-    roomId = generateRoomId();
-    isHost = true;
+        if (!playerName) return toast("Enter name");
 
-    const roomRef = doc(db, "rooms", roomId);
+        roomId = generateRoomId();
+        isHost = true;
 
-    await setDoc(roomRef, {
-        host: playerName,
-        phase: "lobby",
-        started: false,
-        createdAt: Date.now(),
+        // Save room info locally
+        localStorage.setItem("roomId", roomId);
+        localStorage.setItem("playerName", playerName);
 
-        players: [
-        {
-            name: playerName,
-            ready: false,
-            score: 0
-        }
-        ]
-    });
+        const roomRef = doc(db, "rooms", roomId);
 
-    setupRoomListener();
-    showCreatedRoom();
+        await setDoc(roomRef, {
+            host: playerName,
+            phase: "lobby",
+            started: false,
+            createdAt: Date.now(),
+
+            players: [
+                {
+                    name: playerName,
+                    ready: false,
+                    score: 0
+                }
+            ]
+        });
+
+        setupRoomListener();
+        showCreatedRoom();
     };
-
 
     // ==========================
     // SHOW CREATED ROOM SCREEN
@@ -189,10 +191,9 @@
             score: 0
         })
     });
-
-
+    localStorage.setItem("roomId", roomId);
+    localStorage.setItem("playerName", playerName);
     setupRoomListener();
-
     showLobby();
     };
 
@@ -238,6 +239,9 @@
             })
         });
 
+        localStorage.setItem("roomId", roomId);
+        localStorage.setItem("playerName", playerName);
+
         setupRoomListener();
         showLobby();
         };
@@ -249,15 +253,23 @@
     }
 
 
- function setupRoomListener() {
+function setupRoomListener() {
+
+    // Remove previous listener
+    if (unsubscribeRoom) {
+        unsubscribeRoom();
+    }
+
     const roomRef = doc(db, "rooms", roomId);
 
-    onSnapshot(roomRef, (snap) => {
+    unsubscribeRoom = onSnapshot(roomRef, (snap) => {
+
         if (!snap.exists()) return;
 
         console.log("Snapshot:", snap.data());
 
         const data = snap.data();
+
         if (!data || !data.phase) return;
 
         roomData = data;
@@ -265,13 +277,6 @@
 
         updateLobbyUI();
 
-        // ✅ CLEANUP
-        if (roomData.phase !== "discussion") {
-            clearInterval(timerInterval);
-            discussionStarted = false;
-        }
-
-        // ✅ HANDLE SCREENS
         if (
             roomData.phase === "playing" &&
             !screens.pass.classList.contains("active") &&
@@ -291,7 +296,6 @@
             roomData.phase === "voting" &&
             !screens.voting.classList.contains("active")
         ) {
-            votingStarted = false; // ✅ reset guard
             showVoting();
         }
 
@@ -300,39 +304,6 @@
             !screens.results.classList.contains("active")
         ) {
             showResults();
-        }
-
-        // ✅ READY LOGIC
-        const readyList = roomData.readyForDiscussion || [];
-
-        if (readyList.includes(playerName)) {
-            const btn = document.getElementById("continueBtn");
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
-                btn.classList.remove("btn-primary");
-                btn.classList.add("btn-warning");
-            }
-        }
-
-        if (
-            readyList.length === roomData.players.length &&
-            roomData.phase === "playing"
-        ) {
-            if (isHost) {
-                startDiscussion();
-            }
-        }
-
-        // ✅ ✅ ✅ THIS MUST BE HERE (INSIDE SNAPSHOT)
-        if (roomData.phase === "voting") {
-            const votes = roomData.votes || {};
-            const votedCount = Object.keys(votes).length;
-            const totalPlayers = roomData.players.length;
-
-            if (votedCount === totalPlayers && isHost) {
-                calculateResults();
-            }
         }
     });
 }
@@ -439,15 +410,30 @@
     // ==========================
 
     async function leaveRoom() {
-    const roomRef = doc(db, "rooms", roomId);
 
-    const updated = roomData.players.filter(p => p.name !== playerName);
+        const roomRef = doc(db, "rooms", roomId);
 
-    await updateDoc(roomRef, {
-        players: updated
-    });
+        const updatedPlayers =
+            roomData.players.filter(
+                p => p.name !== playerName
+            );
 
-    location.reload();
+        const update = {
+            players: updatedPlayers
+        };
+
+        if (
+            roomData.host === playerName &&
+            updatedPlayers.length > 0
+        ) {
+            update.host = updatedPlayers[0].name;
+        }
+
+        await updateDoc(roomRef, update);
+        localStorage.removeItem("roomId");
+        localStorage.removeItem("playerName");
+
+        location.reload();
     }
 
 
@@ -457,6 +443,21 @@
     // ==========================
     console.log("APP STARTING...");
     async function startApp() {
+      
+    const roomRef = doc(db, "rooms", savedRoom);
+    const snap = await getDoc(roomRef);
+
+    if (snap.exists()) {
+        roomId = savedRoom;
+        playerName = savedPlayer;
+
+        setupRoomListener();
+        showLobby();
+        return;
+    } else {
+        localStorage.removeItem("roomId");
+        localStorage.removeItem("playerName");
+    }  
     showScreen("loading");
 
     await loadWords();
@@ -508,52 +509,22 @@
     // ==========================
     // START GAME (HOST ONLY)
     // ==========================
+
     async function startGame() {
-    if (!isHost) return;
 
-    const roomRef = doc(db, "rooms", roomId);
+        if (!isHost) return;
 
-    const players = roomData.players;
+        if (roomData.started) {
+            return toast("Game already started");
+        }
+        
+        function showPassScreen() {
+            showScreen("pass");
 
-    if (players.length < 3) {
-        return toast("Need at least 3 players");
-    }
-    
-        if (!players.every(p => p.ready)) {
-        return toast("All players must be ready");
+            document.getElementById("revealRoleBtn").onclick = revealMyRole;
         }
 
-
-    const word =
-        words[Math.floor(Math.random() * words.length)];
-
-    const impostorPlayer =
-        players[Math.floor(Math.random() * players.length)].name;
-
-
-        
-        await updateDoc(roomRef, {
-        phase: "playing",
-        started: true,
-        word,
-        impostor: impostorPlayer,
-
-        // ✅ reset
-        readyForDiscussion: [],
-        revealedPlayers: [] // ✅ ADD THIS
-        });
-
-
     }
-
-    
-    function showPassScreen() {
-        showScreen("pass");
-
-        document.getElementById("revealRoleBtn").onclick = revealMyRole;
-    }
-
-
     // ==========================
     // SHOW PASS SCREEN
     // ==========================
@@ -633,11 +604,18 @@
     async function startDiscussion() {
         const roomRef = doc(db, "rooms", roomId);
 
-        await updateDoc(roomRef, {
-            phase: "discussion",
-            timeStarted: Date.now(),
-            discussionTime: 60 // ✅ set time here
-        });
+        try {
+
+            await updateDoc(roomRef, {
+                phase: "discussion"
+            });
+
+        } catch (err) {
+
+            console.error(err);
+            toast("Connection error");
+
+        }
     }
 
 

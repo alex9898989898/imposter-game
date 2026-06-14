@@ -734,9 +734,14 @@ window.addEventListener("DOMContentLoaded", () => {
             updates.revealedPlayers = [...revealedList, playerName];
         }
 
+
         if (Object.keys(updates).length > 0) {
-            await updateDoc(roomRef, updates);
+            setTimeout(async () => {
+                await updateDoc(roomRef, updates);
+                console.log("✅ Player ready + revealed (delayed)");
+            }, 500); // ✅ 0.5 sec delay
         }
+
 
         const el = document.getElementById("roleContent");
 

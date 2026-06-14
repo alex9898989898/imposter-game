@@ -899,6 +899,22 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // ✅ Timer logic
     timerInterval = setInterval(() => {
+
+        
+        const votes = roomData.votes || {};
+        const total = roomData.players.length;
+
+        // ✅ if all players voted → finish immediately
+        if (Object.keys(votes).length === total) {
+            clearGameTimer();
+
+            if (isHost && roomData.phase === "voting") {
+                calculateResults();
+            }
+
+            return;
+        }
+
         const start = roomData.voteStarted;
         if (!start) return;
 

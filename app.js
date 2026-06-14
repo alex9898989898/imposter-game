@@ -499,7 +499,7 @@
         impostor: impostorPlayer,
 
         // ✅ reset
-        readyForDiscussion: []
+        readyForDiscussion: [],
         revealedPlayers: [] // ✅ ADD THIS
         });
 

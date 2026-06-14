@@ -308,12 +308,11 @@ function setupRoomListener() {
             showPassScreen();
         }
 
-        if (
-            roomData.phase === "discussion" &&
-            !screens.discussion.classList.contains("active")
-        ) {
+
+        if (roomData.phase === "discussion") {
             showDiscussion();
         }
+
 
         if (roomData.phase === "voting") {
             showVoting(); // ✅ ALWAYS refresh
@@ -674,17 +673,22 @@ window.addEventListener("DOMContentLoaded", () => {
         discussionStarted = true;
 
         showScreen("discussion");
+        updateTimer(); // ✅ ensures it doesn't show 00:00 initially
 
         clearGameTimer();
 
         timerInterval = setInterval(() => {
-            if (!roomData?.timeStarted) return;
+
+            const started = roomData?.timeStarted;
+
+            if (!started) return;
 
             const now = Date.now();
-            const elapsed = Math.floor((now - roomData.timeStarted) / 1000);
+            const elapsed = Math.floor((now - started) / 1000);
             const duration = roomData.discussionTime || 120;
 
             timeLeft = Math.max(duration - elapsed, 0);
+
             updateTimer();
 
             if (timeLeft <= 0) {
@@ -696,6 +700,7 @@ window.addEventListener("DOMContentLoaded", () => {
             }
 
         }, 1000);
+
     }
 
 

@@ -297,6 +297,12 @@ function setupRoomListener() {
 
         roomData = data;
         
+        if (roomData.phase === "playing") {
+            // ✅ ensure fresh round state
+            discussionStarted = false;
+        }
+
+        
         if (roomData.phase === "lobby") {
             passShown = false;
             discussionStarted = false;
@@ -336,24 +342,29 @@ function setupRoomListener() {
 
 
         
+
+
         if (
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
             !passShown
-            
         ) {
+            console.log("📺 NEW ROUND PASS SCREEN");
+
             passShown = true;
             showPassScreen();
-            console.log("📺 SHOW PASS SCREEN");
         }
-
 
 
 
         // ✅ AUTO START DISCUSSION
 
         if (roomData.phase === "playing") {
-            const ready = roomData.readyForDiscussion || [];
+            
+        const ready = roomData.readyForDiscussion || [];
+
+        console.log("✅ READY:", ready.length, "/", roomData.players.length);
+
 
             if (
                 ready.length === roomData.players.length &&
@@ -1129,7 +1140,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         await updateDoc(roomRef, {
             phase: "lobby",
-            players: roomData.players, // ✅ DO NOT RESET READY HERE
+            players: roomData.players,
             votes: {},
             impostor: null,
             word: null,
@@ -1140,11 +1151,14 @@ window.addEventListener("DOMContentLoaded", () => {
             voteStarted: null
         });
 
-        passShown = false; // ✅ important if using flag
-        clearGameTimer();
-
+        // ✅ CLIENT RESET (IMPORTANT)
+        passShown = false;
         discussionStarted = false;
         votingStarted = false;
+
+        clearGameTimer();
+
+        console.log("🔄 NEXT ROUND RESET");
 
         showLobby();
     }

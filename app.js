@@ -300,6 +300,17 @@ function setupRoomListener() {
 
         updateLobbyUI();
 
+        
+        // ✅ ONLY show pass screen if still no one started discussion
+        if (
+            roomData.phase === "playing" &&
+            !roomData.timeStarted && // ✅ key fix
+            !screens.pass.classList.contains("active") &&
+            !screens.role.classList.contains("active")
+        ) {
+            showPassScreen();
+        }
+
         // ✅ AUTO START DISCUSSION
         if (roomData.phase === "playing") {
 
@@ -546,9 +557,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (!isHost) return;
 
-        if (roomData.started) {
+        
+        if (roomData.phase !== "lobby") {
             return toast("Game already started");
         }
+
 
         const readyPlayers =
             roomData.players.filter(p => p.ready);

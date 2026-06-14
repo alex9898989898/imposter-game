@@ -249,89 +249,82 @@
     }
 
 
-    // ==========================
-    // ROOM LISTENER (REALTIME)
-    // ==========================
-    function setupRoomListener() {
-        const roomRef = doc(db, "rooms", roomId);
+ function setupRoomListener() {
+    const roomRef = doc(db, "rooms", roomId);
 
-        onSnapshot(roomRef, (snap) => {
-            if (!snap.exists()) return;
+    onSnapshot(roomRef, (snap) => {
+        if (!snap.exists()) return;
 
-            roomData = snap.data();
-            isHost = roomData.host === playerName;
+        console.log("Snapshot:", snap.data());
 
-            updateLobbyUI();
+        const data = snap.data();
+        if (!data || !data.phase) return;
 
-            // ✅ 1. ALWAYS CLEANUP FIRST (prevents stuck players)
-            if (roomData.phase !== "discussion") {
-                clearInterval(timerInterval);
-                discussionStarted = false;
+        roomData = data;
+        isHost = roomData.host === playerName;
+
+        updateLobbyUI();
+
+        // ✅ CLEANUP
+        if (roomData.phase !== "discussion") {
+            clearInterval(timerInterval);
+            discussionStarted = false;
+        }
+
+        // ✅ HANDLE SCREENS
+        if (
+            roomData.phase === "playing" &&
+            !screens.pass.classList.contains("active") &&
+            !screens.role.classList.contains("active")
+        ) {
+            showPassScreen();
+        }
+
+        if (
+            roomData.phase === "discussion" &&
+            !screens.discussion.classList.contains("active")
+        ) {
+            showDiscussion();
+        }
+
+        if (
+            roomData.phase === "voting" &&
+            !screens.voting.classList.contains("active")
+        ) {
+            votingStarted = false; // ✅ reset guard
+            showVoting();
+        }
+
+        if (
+            roomData.phase === "results" &&
+            !screens.results.classList.contains("active")
+        ) {
+            showResults();
+        }
+
+        // ✅ READY LOGIC
+        const readyList = roomData.readyForDiscussion || [];
+
+        if (readyList.includes(playerName)) {
+            const btn = document.getElementById("continueBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
+                btn.classList.remove("btn-primary");
+                btn.classList.add("btn-warning");
             }
+        }
 
-            // ✅ 2. HANDLE PLAYING
-            if (
-                roomData.phase === "playing" &&
-                !screens.pass.classList.contains("active") &&
-                !screens.role.classList.contains("active")
-            ) {
-                showPassScreen();
+        if (
+            readyList.length === roomData.players.length &&
+            roomData.phase === "playing"
+        ) {
+            if (isHost) {
+                startDiscussion();
             }
+        }
 
-            // ✅ 3. HANDLE DISCUSSION
-            if (
-                roomData.phase === "discussion" &&
-                !screens.discussion.classList.contains("active")
-            ) {
-                showDiscussion();
-            }
-
-            // ✅ 4. HANDLE VOTING
-            if (
-                roomData.phase === "voting" &&
-                !screens.voting.classList.contains("active")
-            ) {
-                showVoting();
-            }
-
-            // ✅ 5. HANDLE RESULTS
-            if (
-                roomData.phase === "results" &&
-                !screens.results.classList.contains("active")
-            ) {
-                showResults(roomData.eliminated);
-            }
-
-            // ✅ 6. READY LOGIC
-            const readyList = roomData.readyForDiscussion || [];
-            const revealed = roomData.revealedPlayers || [];
-
-            // 🔘 Update button if this player already clicked Continue
-            if (readyList.includes(playerName)) {
-                const btn = document.getElementById("continueBtn");
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerText = `Waiting (${readyList.length}/${roomData.players.length})`;
-
-                    btn.classList.remove("btn-primary");
-                    btn.classList.add("btn-warning");
-                }
-            }
-
-            // ✅ ONLY start when ALL revealed + ALL ready
-            
-            if (
-                readyList.length === roomData.players.length &&
-                roomData.phase === "playing"
-            ){
-                if (isHost) {
-                    startDiscussion();
-                }
-            }
-        });
-
-        
-        // ✅ AUTO FINISH VOTING (AUTHORITY = FIREBASE)
+        // ✅ ✅ ✅ THIS MUST BE HERE (INSIDE SNAPSHOT)
         if (roomData.phase === "voting") {
             const votes = roomData.votes || {};
             const votedCount = Object.keys(votes).length;
@@ -341,10 +334,8 @@
                 calculateResults();
             }
         }
-
-    }
-
-
+    });
+}
 
     // ==========================
     // SHOW LOBBY
@@ -731,14 +722,11 @@
     // ==========================
     function showVoting() {
     
-        
-    if (votingStarted) return;
+    // REMOVE: if (votingStarted) return;
     votingStarted = true;
 
     clearInterval(timerInterval); // ✅ VERY IMPORTANT
-
     showScreen("voting");
-
     const container = document.getElementById("voteList");
     container.innerHTML = "";
 

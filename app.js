@@ -790,9 +790,7 @@ window.addEventListener("DOMContentLoaded", () => {
             const btn = document.getElementById("continueBtn");
 
             try {
-
                 btn.disabled = true;
-                btn.innerText = "Waiting...";
 
                 await updateDoc(doc(db, "rooms", roomId), {
                     readyForDiscussion: arrayUnion(playerName)
@@ -801,7 +799,6 @@ window.addEventListener("DOMContentLoaded", () => {
                 console.log("✅ READY SENT:", playerName);
 
             } catch (err) {
-
                 console.error(err);
 
                 btn.disabled = false;

@@ -384,29 +384,35 @@ function setupRoomListener() {
         }
 
 
-
+        console.log("Current player:", playerName);
+        console.log("Host:", roomData.host);
+        console.log("Ready list:", roomData.readyForDiscussion);
         // ✅ AUTO START DISCUSSION
-
+        // ✅ AUTO START DISCUSSION
         if (roomData.phase === "playing") {
-            
-        const ready = roomData.readyForDiscussion || [];
 
-        console.log("✅ READY:", ready.length, "/", roomData.players.length);
+            const ready = roomData.readyForDiscussion || [];
+            const totalPlayers = roomData.players.length;
 
+            console.log(
+                "READY:",
+                ready.length,
+                "/",
+                totalPlayers,
+                ready
+            );
 
+            // Host starts discussion when everyone pressed Continue
             if (
-                ready.length === roomData.players.length &&
                 isHost &&
-                roomData.phase === "playing" &&
-                !roomData.timeStarted
+                !roomData.timeStarted &&
+                ready.length >= totalPlayers
             ) {
-                console.log("✅ ALL READY → starting discussion");
+                console.log("🚀 ALL PLAYERS READY");
 
                 startDiscussion();
             }
-
         }
-
 
         // ✅ discussion
 
@@ -781,25 +787,28 @@ window.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("continueBtn").onclick = async () => {
 
-            console.log("➡️ Continue clicked");
-
             const btn = document.getElementById("continueBtn");
 
-            btn.disabled = true;
-            btn.classList.remove("btn-primary");
-            btn.classList.add("btn-warning");
+            try {
 
-            const roomRef = doc(db, "rooms", roomId);
+                btn.disabled = true;
+                btn.innerText = "Waiting...";
 
-            if (!(roomData.readyForDiscussion || []).includes(playerName)) {
-                await updateDoc(roomRef, {
+                await updateDoc(doc(db, "rooms", roomId), {
                     readyForDiscussion: arrayUnion(playerName)
                 });
 
-                console.log("✅ ADDED TO READY:", playerName);
-            }
+                console.log("✅ READY SENT:", playerName);
 
-            btn.innerText = "Waiting...";
+            } catch (err) {
+
+                console.error(err);
+
+                btn.disabled = false;
+                btn.innerText = "Continue";
+
+                toast("Failed to continue");
+            }
         };
                 
 

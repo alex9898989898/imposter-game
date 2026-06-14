@@ -380,11 +380,19 @@ function setupRoomListener() {
         });
 
         // ✅ PASS SCREEN (ONLY ONE!)
+        const hasRevealed =
+    (roomData.revealedPlayers || []).includes(playerName);
+
         if (
             roomData.phase === "playing" &&
             !roomData.timeStarted &&
-            !passShown
+            !passShown &&
+            !hasRevealed   // ✅ KEY FIX
         ) {
+            passShown = true;
+            showPassScreen();
+        }
+        {
             console.log("📺 SHOW PASS SCREEN ONCE");
 
             passShown = true;

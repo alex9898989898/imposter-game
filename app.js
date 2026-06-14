@@ -311,10 +311,13 @@
 
 
                 // ✅ All players ready → host starts discussion
+                const readyList = roomData.readyForDiscussion || [];
+                const revealed = roomData.revealedPlayers || [];
 
                 if (
                     readyList.length === roomData.players.length &&
-                    roomData.phase === "playing" // ✅ important
+                    revealed.length === roomData.players.length &&
+                    roomData.phase === "playing"
                 ) {
                     if (isHost) {
                         startDiscussion();
@@ -511,19 +514,6 @@
         showScreen("pass");
 
         document.getElementById("revealRoleBtn").onclick = revealMyRole;
-
-        // ✅ AUTO START (optional)
-        setTimeout(() => {
-            const readyList = roomData.readyForDiscussion || [];
-
-            if (
-                isHost &&
-                roomData.phase === "playing" &&
-                readyList.length >= 1
-            ) {
-                startDiscussion();
-            }
-        }, 10000);
     }
 
 
@@ -531,22 +521,28 @@
     // SHOW PASS SCREEN
     // ==========================
 
-    function revealMyRole() {
+    async function revealMyRole() {
         const data = roomData;
         if (!data) return;
+
+        const roomRef = doc(db, "rooms", roomId);
+
         if (playerName === data.impostor) {
             myRole = "IMPOSTOR";
         } else {
             myRole = "INNOCENT";
             gameWord = data.word;
         }
+
         showScreen("role");
-        
-        const roomRef = doc(db, "rooms", roomId);
-        // ✅ mark this player as revealed
-        await updateDoc(roomRef, {
-            revealedPlayers: arrayUnion(playerName)
-        });
+
+        // ✅ mark player as revealed
+        const revealedList = data.revealedPlayers || [];
+        if (!revealedList.includes(playerName)) {
+            await updateDoc(roomRef, {
+                revealedPlayers: [...revealedList, playerName]
+            });
+        }
 
         const el = document.getElementById("roleContent");
 
@@ -557,47 +553,41 @@
         }
 
         document.getElementById("continueBtn").onclick = async () => {
-            const roomRef = doc(db, "rooms", roomId);
+
             const btn = document.getElementById("continueBtn");
 
-            // ✅ IMMEDIATE UI change (works for host too)
+            // ✅ UI update
             btn.disabled = true;
             btn.innerText = `Waiting (1/${roomData.players.length})`;
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
 
             const snap = await getDoc(roomRef);
-            const freshData = snap.data();
+            const updated = snap.data();
 
-            let readyList = freshData.readyForDiscussion || [];
+            let ready = updated.readyForDiscussion || [];
+            let revealed = updated.revealedPlayers || [];
 
-            if (!readyList.includes(playerName)) {
-                readyList.push(playerName);
+            // ✅ add to ready list
+            if (!ready.includes(playerName)) {
+                ready.push(playerName);
 
                 await updateDoc(roomRef, {
-                    readyForDiscussion: readyList
+                    readyForDiscussion: ready
                 });
             }
 
-            const updatedSnap = await getDoc(roomRef);
-            const updatedData = updatedSnap.data();
-
-            const readyList = updatedData.readyForDiscussion || [];
-            const revealed = updatedData.revealedPlayers || [];
-
+            // ✅ check start condition (FINAL)
             if (
                 isHost &&
-                readyList.length === updatedData.players.length &&     // ✅ all clicked Continue
-                revealed.length === updatedData.players.length &&      // ✅ all revealed role
-                updatedData.phase === "playing"
+                ready.length === updated.players.length &&
+                revealed.length === updated.players.length &&
+                updated.phase === "playing"
             ) {
                 startDiscussion();
             }
-
         };
-
-
-    } // ✅ ✅ THIS WAS MISSING
+    }
 
     // ==========================
     // START DISCUSSION PHASE

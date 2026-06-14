@@ -503,10 +503,6 @@ function setupRoomListener() {
     let gameWord = null;
     let impostor = null;
 
-    let timerInterval = null;
-    let timeLeft = 0;
-
-
     // ==========================
     // LOAD WORDS
     // ==========================

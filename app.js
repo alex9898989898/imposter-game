@@ -827,30 +827,37 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     function showDiscussion() {
 
-
         discussionStarted = true;
-
         showScreen("discussion");
-        
+
+        const skipBtn = document.getElementById("skipDiscussionBtn");
+
+        // ✅ SHOW ONLY FOR HOST
+        if (isHost) {
+            skipBtn.style.display = "block";
+        } else {
+            skipBtn.style.display = "none";
+        }
+
+        // ✅ 👇 ADD IT RIGHT HERE
+        skipBtn.onclick = async () => {
+            console.log("⏭ HOST SKIPPED DISCUSSION");
+
+            clearGameTimer();
+
+            await startVoting(); // ✅ jump directly to voting
+        };
+
         timeLeft = roomData.discussionTime || 120;
         updateTimer();
-
 
         clearGameTimer();
 
         timerInterval = setInterval(() => {
 
-
-            
             const started = roomData?.timeStarted;
 
-            if (!started) {
-                console.log("❌ timeStarted missing");
-                return;
-            }
-
-
-            console.log("timeStarted:", started);
+            if (!started) return;
 
             const now = Date.now();
             const elapsed = Math.floor((now - started) / 1000);
@@ -870,7 +877,6 @@ window.addEventListener("DOMContentLoaded", () => {
             }
 
         }, 1000);
-
     }
 
 

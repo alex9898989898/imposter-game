@@ -466,34 +466,33 @@ function setupRoomListener() {
 
         await loadWords();
 
+        // ✅ CONNECT BUTTONS HERE
+        const createBtn = document.getElementById("createRoomBtn");
+        if (createBtn) {
+            createBtn.addEventListener("click", () => {
+                console.log("Create clicked ✅");
+                createRoom();
+            });
+        }
+
+        const joinBtn = document.getElementById("joinRoomBtn");
+        if (joinBtn) {
+            joinBtn.addEventListener("click", () => {
+                console.log("Join clicked ✅");
+                joinRoom();
+            });
+        }
+
         const savedRoom = localStorage.getItem("roomId");
         const savedPlayer = localStorage.getItem("playerName");
 
-        if (savedRoom && savedPlayer) {
-
-            const roomRef = doc(db, "rooms", savedRoom);
-            const snap = await getDoc(roomRef);
-
-            if (snap.exists()) {
-
-                roomId = savedRoom;
-                playerName = savedPlayer;
-
-                setupRoomListener();
-
-                setTimeout(() => {
-                    showLobby();
-                }, 300);
-
-                return;
-            }
-
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("playerName");
-        }
-
         showScreen("start");
     }
+
+// ✅ IMPORTANT
+window.addEventListener("DOMContentLoaded", () => {
+    startApp();
+});
 
     // ==========================
     // GAME STATE (PART 2)
@@ -964,4 +963,3 @@ function setupRoomListener() {
 
         showLobby();
     }
-startApp();

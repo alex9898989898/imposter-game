@@ -723,12 +723,7 @@ window.addEventListener("DOMContentLoaded", () => {
         
         const readyList = data.readyForDiscussion || [];
         const revealedList = data.revealedPlayers || [];
-
         const updates = {};
-
-        if (!readyList.includes(playerName)) {
-            updates.readyForDiscussion = [...readyList, playerName];
-        }
 
         if (!revealedList.includes(playerName)) {
             updates.revealedPlayers = [...revealedList, playerName];
@@ -751,7 +746,7 @@ window.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = "🧠 WORD: " + gameWord;
         }
 
-        document.getElementById("continueBtn").onclick = () => {
+       document.getElementById("continueBtn").onclick = async () => {
 
             console.log("➡️ Continue clicked");
 
@@ -761,6 +756,18 @@ window.addEventListener("DOMContentLoaded", () => {
             btn.classList.remove("btn-primary");
             btn.classList.add("btn-warning");
 
+            const roomRef = doc(db, "rooms", roomId);
+
+            const readyList = roomData.readyForDiscussion || [];
+
+            // ✅ ONLY mark ready here
+            if (!readyList.includes(playerName)) {
+                await updateDoc(roomRef, {
+                    readyForDiscussion: [...readyList, playerName]
+                });
+            }
+
+            // ✅ UI waiting display
             const updateUI = () => {
                 const total = roomData.players.length;
                 const ready = roomData.readyForDiscussion?.length || 0;
@@ -774,11 +781,10 @@ window.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
-            // run immediately once
             updateUI();
-
             const interval = setInterval(updateUI, 500);
         };
+
     }
 
     // ==========================

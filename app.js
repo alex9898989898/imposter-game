@@ -305,11 +305,19 @@ function setupRoomListener() {
 
             const btn = document.getElementById("continueBtn");
 
+           
             if (btn) {
-                btn.innerText = `Waiting... (${ready.length}/${total})`;
 
-                console.log("⏳ LIVE WAIT:", ready.length, "/", total);
+                const hasClicked = (roomData.readyForDiscussion || []).includes(playerName);
+
+                if (hasClicked) {
+                    btn.innerText = `Waiting... (${ready.length}/${total})`;
+
+                    btn.classList.remove("btn-success");
+                    btn.classList.add("btn-warning");
+                }
             }
+
         }
         
         if (roomData.phase !== "discussion") {

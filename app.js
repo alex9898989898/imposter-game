@@ -329,6 +329,19 @@
                 }
             }
         });
+
+        
+        // ✅ AUTO FINISH VOTING (AUTHORITY = FIREBASE)
+        if (roomData.phase === "voting") {
+            const votes = roomData.votes || {};
+            const votedCount = Object.keys(votes).length;
+            const totalPlayers = roomData.players.length;
+
+            if (votedCount === totalPlayers && isHost) {
+                calculateResults();
+            }
+        }
+
     }
 
 
@@ -835,13 +848,6 @@
         // ✅ SINGLE UPDATE
         await updateDoc(roomRef, { votes: updatedVotes });
 
-        // ✅ CHECK AFTER UPDATE
-        const votedCount = Object.keys(updatedVotes).length;
-        const totalPlayers = roomData.players.length;
-
-        if (votedCount === totalPlayers) {
-            calculateResults();
-        }
     }
 
     // ==========================
@@ -938,10 +944,8 @@
             word: null,
             started: false,
             readyForDiscussion: [],      // ✅ add this
-            revealedPlayers: [],        // ✅ VERY important reset
-            
-            readyForDiscussion: [],
-            revealedPlayers: []
+            revealedPlayers: []      // ✅ VERY important reset
+
 
         });
 

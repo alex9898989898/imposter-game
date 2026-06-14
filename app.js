@@ -315,11 +315,8 @@ function setupRoomListener() {
             showDiscussion();
         }
 
-        if (
-            roomData.phase === "voting" &&
-            !screens.voting.classList.contains("active")
-        ) {
-            showVoting();
+        if (roomData.phase === "voting") {
+            showVoting(); // ✅ ALWAYS refresh
         }
 
         if (
@@ -625,7 +622,7 @@ function setupRoomListener() {
 
             const roomRef = doc(db, "rooms", roomId);
 
-            // mark player ready (SAFE atomic update)
+            // mark player ready (SAFE atomic update)asdas
             await updateDoc(roomRef, {
                 readyForDiscussion: arrayUnion(playerName)
             });
@@ -740,7 +737,6 @@ function setupRoomListener() {
     // SHOW VOTING UI
     // ==========================
     function showVoting() {
-    if (votingStarted) return;
     votingStarted = true;
 
     clearGameTimer();
@@ -764,7 +760,14 @@ function setupRoomListener() {
     const votedCount = Object.keys(votes).length;
     const total = roomData.players.length;
 
-    info.innerText = `Votes: ${votedCount}/${total}`;
+    
+    setInterval(() => {
+        const votes = roomData.votes || {};
+        const votedCount = Object.keys(votes).length;
+
+        info.innerText = `Votes: ${votedCount}/${total}`;
+    }, 300);
+
     container.appendChild(info);
 
     // ✅ PLAYERS BUTTONS

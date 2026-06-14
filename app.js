@@ -57,9 +57,7 @@
         el.innerText = msg;
         el.style.display = "block";
 
-        setTimeout(() => {
-            el.style.display = "none";
-        }, 2000);
+
     }
 
 
@@ -313,11 +311,16 @@
 
 
                 // ✅ All players ready → host starts discussion
-                if (readyList.length === roomData.players.length) {
-                    if (isHost && roomData.phase !== "discussion") {
+
+                if (
+                    readyList.length === roomData.players.length &&
+                    roomData.phase === "playing" // ✅ important
+                ) {
+                    if (isHost) {
                         startDiscussion();
                     }
                 }
+
             }
         });
     }
@@ -632,13 +635,19 @@
 
             updateTimer();
 
+
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
 
-                if (isHost) {
+                // ✅ extra safety check
+                if (
+                    isHost &&
+                    roomData.phase === "discussion"
+                ) {
                     startVoting();
                 }
             }
+
         }, 1000);
     }
 

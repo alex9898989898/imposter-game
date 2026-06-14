@@ -500,6 +500,7 @@
 
         // ✅ reset
         readyForDiscussion: []
+        revealedPlayers: [] // ✅ ADD THIS
         });
 
 
@@ -532,17 +533,20 @@
 
     function revealMyRole() {
         const data = roomData;
-
         if (!data) return;
-
         if (playerName === data.impostor) {
             myRole = "IMPOSTOR";
         } else {
             myRole = "INNOCENT";
             gameWord = data.word;
         }
-
         showScreen("role");
+        
+        const roomRef = doc(db, "rooms", roomId);
+        // ✅ mark this player as revealed
+        await updateDoc(roomRef, {
+            revealedPlayers: arrayUnion(playerName)
+        });
 
         const el = document.getElementById("roleContent");
 
@@ -578,12 +582,18 @@
             const updatedSnap = await getDoc(roomRef);
             const updatedData = updatedSnap.data();
 
+            const readyList = updatedData.readyForDiscussion || [];
+            const revealed = updatedData.revealedPlayers || [];
+
             if (
                 isHost &&
-                updatedData.readyForDiscussion.length === updatedData.players.length
+                readyList.length === updatedData.players.length &&     // ✅ all clicked Continue
+                revealed.length === updatedData.players.length &&      // ✅ all revealed role
+                updatedData.phase === "playing"
             ) {
                 startDiscussion();
             }
+
         };
 
 

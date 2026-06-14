@@ -268,6 +268,22 @@ function setupRoomListener() {
         unsubscribeRoom();
     }
 
+    
+    const stillInRoom = roomData.players.some(p => p.name === playerName);
+
+    if (!stillInRoom) {
+        toast("You were removed from room ❌");
+
+        localStorage.removeItem("roomId");
+        localStorage.removeItem("playerName");
+
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+
+        return;
+    }
+
     const roomRef = doc(db, "rooms", roomId);
 
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
@@ -384,10 +400,24 @@ function setupRoomListener() {
         roomData.players.forEach(p => {
             const li = document.createElement("li");
 
-            li.innerText =
+            const text = document.createElement("span");
+            text.innerText =
                 p.name +
                 (p.ready ? " ✅" : " ⏳") +
                 (roomData.host === p.name ? " 👑" : "");
+
+            li.appendChild(text);
+
+            // ✅ SHOW REMOVE BUTTON ONLY FOR HOST and NOT yourself
+            if (isHost && p.name !== playerName) {
+                const btn = document.createElement("button");
+                btn.innerText = "❌";
+                btn.style.marginLeft = "10px";
+
+                btn.onclick = () => removePlayer(p.name);
+
+                li.appendChild(btn);
+            }
 
             list.appendChild(li);
         });
@@ -412,6 +442,26 @@ function setupRoomListener() {
             }
         }
     }
+
+
+   // ==========================
+    // REMOVE A PLAYER
+    // ==========================
+    
+    async function removePlayer(name) {
+        if (!isHost) return;
+
+        const roomRef = doc(db, "rooms", roomId);
+
+        const updatedPlayers = roomData.players.filter(p => p.name !== name);
+
+        await updateDoc(roomRef, {
+            players: updatedPlayers
+        });
+
+        toast(`${name} removed ❌`);
+    }
+
 
     // ==========================
     // TOGGLE READY

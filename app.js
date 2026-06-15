@@ -1186,8 +1186,8 @@ window.addEventListener("DOMContentLoaded", () => {
         const winnerHTML = winners.map(name =>
             `<span class="badge">${name}</span>`
         ).join("");
-
-       if (winners.length > 0) {
+     
+        if (winners.length > 0) {
 
         content.innerHTML = `
             <h2 class="result-title">🎯 Impostor Found!</h2>
@@ -1222,17 +1222,16 @@ window.addEventListener("DOMContentLoaded", () => {
             </div>
             </div>
         `;
-        } 
-    
-        document.getElementById("nextRoundBtn").onclick = () => {
-        document.getElementById("nextRoundBtn").disabled = true;
-        nextRound();
-         };
+        }
 
-    
-    
-    
-    
+        // ✅ ✅ ADD THIS RIGHT HERE
+        const btn = document.getElementById("nextRoundBtn");
+
+        btn.onclick = () => {
+        console.log("🔄 NEXT ROUND CLICKED");
+        btn.disabled = true;
+        nextRound();
+        };
     }
 
 

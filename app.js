@@ -249,7 +249,7 @@ const themeBtn = document.getElementById("themeBtn");
 const langBtn = document.getElementById("langBtn");
 
 const languages = ["english", "arabic", "swedish"];
-let currentLanguage = "english";
+
 
 langBtn.addEventListener("click", () => {
   const currentIndex = languages.indexOf(currentLanguage);

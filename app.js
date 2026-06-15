@@ -256,7 +256,7 @@ function updateLanguageControl() {
     langBtn.style.cursor = "pointer";
   } else {
     langBtn.disabled = true;
-    langBtn.style.opacity = "0.5";
+    langBtn.style.opacity = "0.3";  
     langBtn.style.cursor = "not-allowed";
   }
 }
@@ -266,15 +266,18 @@ const languages = ["english", "arabic", "swedish"];
 
 
 
+
 langBtn.onclick = () => {
+  if (!isHost) {
+    return toast("Only host can change language ❌");
+  }
+
   const menu = document.getElementById("langMenu");
 
-  if (menu.style.display === "flex") {
-    menu.style.display = "none";
-  } else {
-    menu.style.display = "flex";
-  }
+  menu.style.display =
+    menu.style.display === "flex" ? "none" : "flex";
 };
+
 
 
 // load saved theme
@@ -457,6 +460,11 @@ function setupRoomListener() {
         // ✅ HOST CHECK
         const previousHost = isHost;
         isHost = roomData.host === playerName;
+        
+        if (!isHost) {
+        document.getElementById("langMenu").style.display = "none";
+        }
+
 
         if (previousHost !== isHost) {
             showLobby();

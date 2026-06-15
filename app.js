@@ -1187,43 +1187,48 @@ window.addEventListener("DOMContentLoaded", () => {
             `<span class="badge">${name}</span>`
         ).join("");
 
-        // ✅ CASE 1: players guessed correctly
-        if (winners.length > 0) {
+       if (winners.length > 0) {
 
-            content.innerHTML = `
-                <h2 class="result-title">🎯 Impostor Found!</h2>
+        content.innerHTML = `
+            <h2 class="result-title">🎯 Impostor Found!</h2>
 
-                <div class="result-row">
-                    <span>🕵️ Impostor</span>
-                    <strong>${impostor}</strong>
-                </div>
+            <div class="impostor-box">
+            <span>🕵️ Impostor</span>
+            <strong>${impostor}</strong>
+            </div>
 
-                <div class="result-row winner">
-                    <span>✅ Winners</span>
-                    <div>${winnerHTML}</div>
-                </div>
-            `;
+            <div class="winner-box">
+            <span>✅ Winners</span>
+            <div class="winner-list">
+                ${winners.map(name => `<span class="badge">${name}</span>`).join("")}
+            </div>
+            </div>
+        `;
 
         } else {
-            // ✅ CASE 2: nobody guessed → impostor wins
 
-            content.innerHTML = `
-                <h2 class="result-title">🕵️ Nobody Found the Impostor</h2>
+        content.innerHTML = `
+            <h2 class="result-title">🕵️ Impostor Wins!</h2>
 
-                <div class="result-row">
-                    <span>🕵️ Impostor</span>
-                    <strong>${impostor}</strong>
-                </div>
+            <div class="impostor-box">
+            <span>🕵️ Impostor</span>
+            <strong>${impostor}</strong>
+            </div>
 
-                <div class="result-row loser">
-                    <span>👑 Winner</span>
-                    <div><span class="badge impostor">${impostor}</span></div>
-                </div>
-            `;
+            <div class="winner-box">
+            <span>👑 Winner</span>
+            <div class="winner-list">
+                <span class="badge impostor">${impostor}</span>
+            </div>
+            </div>
+        `;
         }
 
-        document.getElementById("nextRoundBtn").onclick = nextRound;
-    }
+
+
+
+
+
 
 
     // ==========================

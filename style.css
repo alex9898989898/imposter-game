@@ -547,3 +547,71 @@ main {
   z-index: 5;
 }
 
+.result-title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.impostor-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid #ef4444;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 0 10px rgba(239,68,68,0.3);
+}
+
+.impostor-box strong {
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.winner-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(34,197,94,0.15);
+  border: 1px solid #22c55e;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(34,197,94,0.3);
+}
+
+.winner-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: #22c55e;
+  color: black;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.badge.impostor {
+  background: #ef4444;
+  color: white;
+}
+
+.results-box {
+  animation: popIn 0.4s ease;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

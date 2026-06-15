@@ -28,6 +28,7 @@
     let timerInterval = null;
     let timeLeft = 0; //✅ IMPORTANT
     let passShown = false;
+    let currentLanguage = "english";
 
     function clearGameTimer() {
         if (timerInterval) {
@@ -245,6 +246,23 @@ window.createRoom = async function () {
 
 
 const themeBtn = document.getElementById("themeBtn");
+const langBtn = document.getElementById("langBtn");
+
+const languages = ["english", "arabic", "swedish"];
+let currentLanguage = "english";
+
+langBtn.addEventListener("click", () => {
+  const currentIndex = languages.indexOf(currentLanguage);
+  const nextIndex = (currentIndex + 1) % languages.length;
+
+  currentLanguage = languages[nextIndex];
+
+  console.log("🌍 Language:", currentLanguage);
+
+  loadWords(); // ✅ reload words from correct file
+
+  toast("Language: " + currentLanguage);
+});
 
 // load saved theme
 if (localStorage.getItem("theme") === "light") {
@@ -738,7 +756,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     async function loadWords() {
     try {
-        const res = await fetch("./words.txt"); // ✅ important
+        const res = await fetch(`./words_${currentLanguage}.txt`);
 
         if (!res.ok) {
         throw new Error("File not found");
@@ -751,13 +769,12 @@ window.addEventListener("DOMContentLoaded", () => {
         .map(w => w.trim())
         .filter(Boolean);
 
-        console.log("✅ Words loaded:", words.length);
+        console.log(`✅ Words loaded (${currentLanguage}):`, words.length);
 
     } catch (err) {
-        console.error("❌ Failed to load words.txt:", err);
+        console.error("❌ Failed to load words:", err);
 
-        // ✅ fallback (so app NEVER breaks)
-        words = ["Pizza", "Volvo", "Football", "School", "Police"];
+        words = ["Pizza", "Car", "School"]; // fallback
     }
     }
 

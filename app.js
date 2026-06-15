@@ -114,44 +114,45 @@
     // ==========================
 
 window.createRoom = async function () {
-    try {
-        console.log("Creating room...");
+  try {
+    console.log("🔥 Creating room...");
 
-        if (!(await isGameEnabled())) {
-            return toast("Server busy. Try later 🚫");
-        }
-
-        playerName = document.getElementById("playerName").value.trim();
-
-        if (!playerName) return toast("Enter name");
-
-        roomId = generateRoomId();
-        isHost = true;
-
-        localStorage.setItem("roomId", roomId);
-        localStorage.setItem("playerName", playerName);
-
-        const roomRef = doc(db, "rooms", roomId);
-
-        await setDoc(roomRef, {
-            host: playerName,
-            phase: "lobby",
-            started: false,
-            createdAt: Date.now(),
-            players: [
-                { name: playerName, ready: false, score: 0 }
-            ]
-        });
-
-        console.log("✅ Room created successfully");
-
-        setupRoomListener();
-        showCreatedRoom();
-
-    } catch (err) {
-        console.error("❌ CREATE ROOM ERROR:", err);
-        toast("Error creating room");
+    if (!(await isGameEnabled())) {
+      return toast("Server busy");
     }
+
+    const input = document.getElementById("playerName");
+    playerName = input.value.trim();
+
+    if (!playerName) {
+      console.log("❌ No name entered");
+      return toast("Enter name");
+    }
+
+    roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    isHost = true;
+
+    console.log("Room ID:", roomId);
+    console.log("Player:", playerName);
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    await setDoc(roomRef, {
+      host: playerName,
+      phase: "lobby",
+      players: [
+        { name: playerName, ready: false, score: 0 }
+      ]
+    });
+
+    console.log("✅ Firebase write success");
+
+    showScreen("created");
+
+  } catch (err) {
+    console.error("❌ ERROR:", err);
+    toast("Something failed");
+  }
 };
 
 

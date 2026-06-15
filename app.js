@@ -68,10 +68,15 @@
     };
 
     function showScreen(name) {
-    Object.values(screens).forEach(s => s.classList.remove("active"));
-    screens[name].classList.add("active");
-    }
+        Object.values(screens).forEach(s => {
+            s.classList.remove("active");
+            s.style.pointerEvents = "none"; // ✅ block old screens
+        });
 
+        const active = screens[name];
+        active.classList.add("active");
+        active.style.pointerEvents = "auto"; // ✅ allow clicks only here
+    }
 
     // ==========================
     // TOAST
@@ -562,7 +567,7 @@ function setupRoomListener() {
             passShown = false;
             discussionStarted = false;
             resultsShown = false;
-            
+
             showLobby(); ///✅ ADD THIS
             clearGameTimer();
             timeLeft = 0;
@@ -1275,15 +1280,16 @@ window.addEventListener("DOMContentLoaded", () => {
         const newBtn = oldBtn.cloneNode(true);
         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
+        // ✅ ADD HERE ✅
+        newBtn.style.pointerEvents = "auto";
+        newBtn.style.zIndex = "20";
+
         // ✅ new button clean listener
         newBtn.onclick = async () => {
         console.log("🔄 NEXT ROUND CLICKED");
-
         newBtn.disabled = true;
-
         await nextRound();
         };
-
 
     }
 

@@ -130,12 +130,17 @@ body.light .input::placeholder {
 ========================= */
 
 
+
 .screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
   display: none;
-  padding: 20px;
-  position: relative; /* ✅ ADD */
-  z-index: 1;          /* ✅ ADD */
 }
+
+
 
 
 .screen.active {
@@ -143,13 +148,25 @@ body.light .input::placeholder {
   justify-content: center;
   align-items: center;
   min-height: calc(100vh - 60px);
-  z-index: 5; /* ✅ IMPORTANT */
+
+  z-index: 50; /* ✅ HIGHER */
+  pointer-events: auto; /* ✅ allow clicks */
 }
 
+.screen:not(.active) {
+  pointer-events: none; /* ✅ THIS FIXES EVERYTHING */
+  z-index: 0;
+}
 
 .screen.active {
   animation: fadeIn 0.3s ease;
 }
+
+#nextRoundBtn {
+  position: relative;
+  z-index: 100;
+}
+
 
 
 

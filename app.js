@@ -1264,14 +1264,22 @@ window.addEventListener("DOMContentLoaded", () => {
         `;
         }
 
-        // ✅ ✅ ADD THIS RIGHT HERE
-        const btn = document.getElementById("nextRoundBtn");
+        const oldBtn = document.getElementById("nextRoundBtn");
 
-        btn.onclick = () => {
+        // ✅ replace the button entirely
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+        // ✅ new button clean listener
+        newBtn.onclick = async () => {
         console.log("🔄 NEXT ROUND CLICKED");
-        btn.disabled = true;
-        nextRound();
+
+        newBtn.disabled = true;
+
+        await nextRound();
         };
+
+
     }
 
 

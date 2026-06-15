@@ -146,7 +146,7 @@ window.createRoom = async function () {
     });
 
     console.log("✅ Firebase write success");
-
+    setupRoomListener();   
     showCreatedRoom();
 
   } catch (err) {

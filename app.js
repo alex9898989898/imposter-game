@@ -1297,17 +1297,3 @@ window.addEventListener("DOMContentLoaded", () => {
             }
         };
     }
-
-    window.addEventListener("load", () => {
-    setTimeout(() => {
-        // remove active from all screens
-        document.querySelectorAll(".screen").forEach(s => {
-        s.classList.remove("active");
-        });
-
-        // show start screen
-        document.getElementById("startScreen").classList.add("active");
-
-        console.log("✅ forced start screen");
-    }, 500);
-    });

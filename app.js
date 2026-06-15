@@ -405,7 +405,7 @@ function setupRoomListener() {
 
 
         // ✅ UPDATE WAITING UI LIVE
-        if (roomData.phase === "playing" && !roomData.timeStarted) {
+        if (roomData.phase === "playing" && roomData.timeStarted === null) {
 
             const ready = roomData.readyForDiscussion || [];
             const total = roomData.players.length;
@@ -494,7 +494,7 @@ function setupRoomListener() {
         // ✅ PASS SCREEN (ONLY ONE!)
         if (
             roomData.phase === "playing" &&
-            !roomData.timeStarted &&
+            roomData.timeStarted === null &&
             !passShown
         ) {
             console.log("📺 SHOW PASS SCREEN ONCE");
@@ -527,7 +527,7 @@ function setupRoomListener() {
             if (
             isHost &&
             roomData.phase === "playing" &&
-            !roomData.timeStarted &&
+            roomData.timeStarted === null &&
             ready.length === totalPlayers &&
             totalPlayers > 0
             ) {
@@ -870,7 +870,8 @@ window.addEventListener("DOMContentLoaded", () => {
             revealedPlayers: [],
             readyForDiscussion: [],
             votes: {},
-            voteStarted: null
+            voteStarted: null,
+            timeStarted: null   
         });
     }
     // ==========================
@@ -988,8 +989,7 @@ window.addEventListener("DOMContentLoaded", () => {
         timerInterval = setInterval(() => {
 
             const started = roomData?.timeStarted;
-
-            if (!started) return;
+            if (typeof started !== "number") return;
 
             const now = Date.now();
             const elapsed = Math.floor((now - started) / 1000);
@@ -1453,3 +1453,7 @@ document.addEventListener("click", (e) => {
     menu.style.display = "none";
   }
 });
+
+function isDiscussionStarted() {
+  return roomData.timeStarted !== null;
+}

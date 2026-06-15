@@ -19,7 +19,7 @@
     // ==========================
     let roomId = null;
     let playerName = null;
-
+    let resultsShown = false;
     let roomData = null;
     let isHost = false;
     let discussionStarted = false;
@@ -561,9 +561,12 @@ function setupRoomListener() {
         if (roomData.phase === "lobby" && roomData.started === false) {
             passShown = false;
             discussionStarted = false;
+            resultsShown = false;
+            
             showLobby(); ///✅ ADD THIS
             clearGameTimer();
             timeLeft = 0;
+            
             console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
 
@@ -571,9 +574,11 @@ function setupRoomListener() {
 
 
         // ✅ RESULTS
-        if (roomData.phase === "results") {
+        if (roomData.phase === "results" && !resultsShown) {
+            resultsShown = true;
             showResults();
         }
+
     });
 }
 

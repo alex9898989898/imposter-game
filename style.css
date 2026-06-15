@@ -614,9 +614,16 @@ main {
 }
 
 
+
 .lang-menu {
-  transition: all 0.2s ease;
+  background: rgba(0,0,0,0.9);
+  color: white;
 }
+
+body.light .lang-menu {
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
 
 .lang-menu div {
   padding: 8px 12px;
@@ -657,4 +664,22 @@ main {
 
 .lang-menu div:hover {
   background: rgba(255,255,255,0.1);
+}
+/* ✅ FIX text color in light mode */
+body.light .lang-menu {
+  background: white;
+  color: #111;
+}
+
+body.light .lang-menu div {
+  color: #111;
+}
+
+body.light .lang-menu div:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+body.light .lang-menu div.active {
+  background: #3b82f6;
+  color: white;
 }

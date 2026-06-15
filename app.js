@@ -29,6 +29,7 @@
     let timeLeft = 0; //✅ IMPORTANT
     let passShown = false;
     let currentLanguage = "english";
+    let uiLocked = false;
 
     function clearGameTimer() {
         if (timerInterval) {
@@ -390,112 +391,85 @@ function setupRoomListener() {
             location.reload();
             return;
         }
-
         const data = snap.data();
-
-
         console.log("Snapshot:", data);
-
         // ✅ SAFETY CHECK
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
-
         
+        // ✅ BLOCK noisy updates during results
+
+        if (uiLocked && roomData.phase === "results") {
+            return;
+        }
         if (roomData.language && roomData.language !== currentLanguage) {
         currentLanguage = roomData.language;
         loadWords();
         updateLanguageBadge();
         }
-
-
         // ✅ UPDATE WAITING UI LIVE
         if (roomData.phase === "playing" && roomData.timeStarted === null) {
 
             const ready = roomData.readyForDiscussion || [];
             const total = roomData.players.length;
-
             const btn = document.getElementById("continueBtn");
-
-           
             if (btn) {
-
                 const hasClicked = (roomData.readyForDiscussion || []).includes(playerName);
-
                 if (hasClicked) {
                     btn.innerText = `Waiting... (${ready.length}/${total})`;
-
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-warning");
                 }
             }
 
         }
-        
+    
         if (roomData.phase !== "discussion") {
             discussionStarted = false;
-        }
-
-        
+        }    
         if (roomData.phase === "lobby") {
             passShown = false;
             discussionStarted = false;
         }
-
-        
         console.log("🧠 PHASE:", roomData.phase);
         console.log("🧠 timeStarted:", roomData.timeStarted);
         console.log("🧠 readyForDiscussion:", roomData.readyForDiscussion);
         console.log("🧠 passShown:", passShown);
         console.log("🧠 discussionStarted:", discussionStarted);  
-
         // ✅ AUTO-KICK IF REMOVED
         const stillInRoom = roomData.players.some(p => p.name === playerName);
-
         if (!stillInRoom) {
             toast("You were removed ❌");
-
             localStorage.removeItem("roomId");
             localStorage.removeItem("playerName");
-
             setTimeout(() => location.reload(), 1000);
             return;
         }
-
         // ✅ HOST CHECK
         const previousHost = isHost;
         isHost = roomData.host === playerName;
-        
         if (!isHost) {
         document.getElementById("langMenu").style.display = "none";
         }
-
-
         if (previousHost !== isHost) {
             showLobby();
         }
         updateLanguageControl();
         updateLobbyUI();
-
                 // ✅ PASS SCREEN
-
-
                 // 🔍 DEBUG PASS CHECK
         console.log("CHECK PASS:", {
             phase: roomData.phase,
             timeStarted: roomData.timeStarted,
             passShown
         });
-
-
-
         // 🔍 DEBUG PASS CHECK
         console.log("CHECK PASS:", {
             phase: roomData.phase,
             timeStarted: roomData.timeStarted,
             passShown
         });
-
         // ✅ PASS SCREEN (ONLY ONE!)
         if (
             roomData.phase === "playing" &&
@@ -507,18 +481,14 @@ function setupRoomListener() {
             passShown = true;
             showPassScreen();
         }
-
-
         console.log("Current player:", playerName);
         console.log("Host:", roomData.host);
         console.log("Ready list:", roomData.readyForDiscussion);
         // ✅ AUTO START DISCUSSION
         // ✅ AUTO START DISCUSSION
         if (roomData.phase === "playing" && roomData.started === true) {
-
             const ready = roomData.readyForDiscussion || [];
             const totalPlayers = roomData.players.length;
-
             console.log(
                 "READY:",
                 ready.length,
@@ -526,9 +496,7 @@ function setupRoomListener() {
                 totalPlayers,
                 ready
             );
-
             // Host starts discussion when everyone pressed Continue
-
             if (
             isHost &&
             roomData.phase === "playing" &&
@@ -539,18 +507,12 @@ function setupRoomListener() {
             console.log("🚀 START DISCUSSION (SAFE)");
             startDiscussion();
             }
-
         }
-
         // ✅ discussion
-
         if (roomData.phase === "discussion" && !discussionStarted) {
             discussionStarted = true;
             showDiscussion();
         }
-
-
-
         // ✅ VOTING
         if (
             roomData.phase === "voting" &&
@@ -561,29 +523,25 @@ function setupRoomListener() {
             updateVotingUI(); // ✅ NEW FUNCTION
         }
 
-        
-        
         if (roomData.phase === "lobby" && roomData.started === false) {
             passShown = false;
             discussionStarted = false;
             resultsShown = false;
+            uiLocked = false; // ✅ VERY IMPORTANT RESET
 
-            showLobby(); ///✅ ADD THIS
+            showLobby();
             clearGameTimer();
             timeLeft = 0;
-            
+
             console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
-
-
-
 
         // ✅ RESULTS
         if (roomData.phase === "results" && !resultsShown) {
             resultsShown = true;
+            uiLocked = true; // ✅ LOCK UI
             showResults();
         }
-
     });
 }
 
@@ -1288,6 +1246,7 @@ window.addEventListener("DOMContentLoaded", () => {
         newBtn.onclick = async () => {
         console.log("🔄 NEXT ROUND CLICKED");
         newBtn.disabled = true;
+        uiLocked = false;
         await nextRound();
         };
 

@@ -688,12 +688,9 @@ function setupRoomListener() {
     // ==========================
     // START APP
     // ==========================
-    console.log("APP STARTING...");
     async function startApp() {
 
-        await loadWords();
-
-        // ✅ CONNECT BUTTONS HERE
+        // ✅ CONNECT BUTTONS FIRST (VERY IMPORTANT)
         const createBtn = document.getElementById("createRoomBtn");
         if (createBtn) {
             createBtn.addEventListener("click", () => {
@@ -710,17 +707,14 @@ function setupRoomListener() {
             });
         }
 
-        const savedRoom = localStorage.getItem("roomId");
-        const savedPlayer = localStorage.getItem("playerName");
-
-        
-        // ✅ check link first
-        if (quickJoinCheck()) {
-            return; // stop here if link join
-        }
-
+        // ✅ SHOW START SCREEN IMMEDIATELY
         showScreen("start");
 
+        // ✅ THEN load words (in background)
+        loadWords();
+
+        // ✅ check link
+        if (quickJoinCheck()) return;
     }
 
 // ✅ IMPORTANT
@@ -741,7 +735,12 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     async function loadWords() {
     try {
-        const res = await fetch("words.txt");
+        const res = await fetch("./words.txt"); // ✅ important
+
+        if (!res.ok) {
+        throw new Error("File not found");
+        }
+
         const text = await res.text();
 
         words = text
@@ -749,10 +748,16 @@ window.addEventListener("DOMContentLoaded", () => {
         .map(w => w.trim())
         .filter(Boolean);
 
-    } catch (e) {
+        console.log("✅ Words loaded:", words.length);
+
+    } catch (err) {
+        console.error("❌ Failed to load words.txt:", err);
+
+        // ✅ fallback (so app NEVER breaks)
         words = ["Pizza", "Volvo", "Football", "School", "Police"];
     }
     }
+
     console.log("WORDS LOADED");
 
         

@@ -251,18 +251,17 @@ const langBtn = document.getElementById("langBtn");
 const languages = ["english", "arabic", "swedish"];
 
 
-langBtn.addEventListener("click", () => {
-  const currentIndex = languages.indexOf(currentLanguage);
-  const nextIndex = (currentIndex + 1) % languages.length;
 
-  currentLanguage = languages[nextIndex];
+langBtn.onclick = () => {
+  const menu = document.getElementById("langMenu");
 
-  console.log("🌍 Language:", currentLanguage);
+  if (menu.style.display === "flex") {
+    menu.style.display = "none";
+  } else {
+    menu.style.display = "flex";
+  }
+};
 
-  loadWords(); // ✅ reload words from correct file
-
-  toast("Language: " + currentLanguage);
-});
 
 // load saved theme
 if (localStorage.getItem("theme") === "light") {
@@ -716,6 +715,11 @@ function setupRoomListener() {
     // START APP
     // ==========================
     async function startApp() {
+
+
+        const savedLang = localStorage.getItem("language");
+        if (savedLang) currentLanguage = savedLang;
+        updateLanguageBadge();
 
         // ✅ CONNECT BUTTONS FIRST (VERY IMPORTANT)
         const createBtn = document.getElementById("createRoomBtn");
@@ -1344,3 +1348,49 @@ async function nextRound() {
         };
     }
 
+    
+
+window.setLanguage = function (lang) {
+  currentLanguage = lang;
+
+  localStorage.setItem("language", lang); // ✅ save
+
+  loadWords();
+
+  document.getElementById("langMenu").style.display = "none";
+
+  updateLanguageBadge();
+
+  toast("Language: " + lang);
+};
+
+
+function updateLanguageBadge() {
+  const badge = document.getElementById("langBadge");
+
+  const map = {
+    english: "EN",
+    arabic: "AR",
+    swedish: "SE"
+  };
+
+  badge.innerText = map[currentLanguage];
+
+  // ✅ highlight active language
+  document.querySelectorAll("#langMenu div").forEach(item => {
+    if (item.dataset.lang === currentLanguage) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("langMenu");
+  const btn = document.getElementById("langBtn");
+
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.style.display = "none";
+  }
+});

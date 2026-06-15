@@ -507,15 +507,6 @@ body.light #playersList li {
     border: 1px solid #22c55e;
 }
 
-.badge {
-    background: #22c55e;
-    color: black;
-    padding: 6px 10px;
-    border-radius: 999px;
-    margin-right: 6px;
-    font-weight: bold;
-    font-size: 13px;
-}
 
 .badge.impostor {
     background: #ef4444;
@@ -614,4 +605,56 @@ main {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+
+.lang-menu div.active {
+  background: #3b82f6;
+  color: white;
+}
+
+
+.lang-menu {
+  transition: all 0.2s ease;
+}
+
+.lang-menu div {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.lang-menu div:hover {
+  background: rgba(255,255,255,0.1);
+}
+.lang-badge {
+  background: #3b82f6;
+  color: white;
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.lang-menu {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  background: rgba(0,0,0,0.95);
+  border-radius: 10px;
+  padding: 10px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+
+.lang-menu div {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.lang-menu div:hover {
+  background: rgba(255,255,255,0.1);
 }

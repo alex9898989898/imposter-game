@@ -528,7 +528,7 @@ function setupRoomListener() {
         if (roomData.phase === "lobby" && roomData.started === false) {
             passShown = false;
             discussionStarted = false;
-            showLobby(); ✅ ADD THIS
+            showLobby(); ///✅ ADD THIS
             console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
 
@@ -1222,7 +1222,18 @@ window.addEventListener("DOMContentLoaded", () => {
             </div>
             </div>
         `;
-        } }
+        } 
+    
+        document.getElementById("nextRoundBtn").onclick = () => {
+        document.getElementById("nextRoundBtn").disabled = true;
+        nextRound();
+         };
+
+    
+    
+    
+    
+    }
 
 
 
@@ -1334,7 +1345,3 @@ async function nextRound() {
         };
     }
 
-document.getElementById("nextRoundBtn").onclick = () => {
-    document.getElementById("nextRoundBtn").disabled = true;
-    nextRound();
-};

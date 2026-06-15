@@ -509,7 +509,7 @@ function setupRoomListener() {
         console.log("Ready list:", roomData.readyForDiscussion);
         // ✅ AUTO START DISCUSSION
         // ✅ AUTO START DISCUSSION
-        if (roomData.phase === "playing") {
+        if (roomData.phase === "playing" && roomData.started === true) {
 
             const ready = roomData.readyForDiscussion || [];
             const totalPlayers = roomData.players.length;
@@ -523,15 +523,18 @@ function setupRoomListener() {
             );
 
             // Host starts discussion when everyone pressed Continue
-            if (
-                isHost &&
-                !roomData.timeStarted &&
-                ready.length >= totalPlayers
-            ) {
-                console.log("🚀 ALL PLAYERS READY");
 
-                startDiscussion();
+            if (
+            isHost &&
+            roomData.phase === "playing" &&
+            !roomData.timeStarted &&
+            ready.length === totalPlayers &&
+            totalPlayers > 0
+            ) {
+            console.log("🚀 START DISCUSSION (SAFE)");
+            startDiscussion();
             }
+
         }
 
         // ✅ discussion
@@ -559,6 +562,8 @@ function setupRoomListener() {
             passShown = false;
             discussionStarted = false;
             showLobby(); ///✅ ADD THIS
+            clearGameTimer();
+            timeLeft = 0;
             console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
 
@@ -1281,31 +1286,43 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
 async function nextRound() {
     const roomRef = doc(db, "rooms", roomId);
+    
+    console.log("RESET COMPLETE:", {
+    readyForDiscussion: [],
+    revealedPlayers: []
+    });
+
 
     console.log("🔄 NEXT ROUND CLICKED");
 
     try {
-        await updateDoc(roomRef, {
-            phase: "lobby",
-            players: roomData.players.map(p => ({
-                ...p,
-                ready: false // ✅ RESET READY
-            })),
-            votes: {},
-            impostor: null,
-            word: null,
-            started: false,
-            readyForDiscussion: [],
-            revealedPlayers: [],
-            timeStarted: null,
-            voteStarted: null
-        });
+            await updateDoc(roomRef, {
+                phase: "lobby",
+                started: false,
+
+                // ✅ reset game fields
+                votes: {},
+                impostor: null,
+                word: null,
+
+                // ✅ IMPORTANT RESETS
+                readyForDiscussion: [],
+                revealedPlayers: [],
+                
+                timeStarted: null,
+                voteStarted: null,
+
+                players: roomData.players.map(p => ({
+                    ...p,
+                    ready: false
+                }))
+            });
 
         // ✅ LOCAL RESET (VERY IMPORTANT)
         passShown = false;
         discussionStarted = false;
         votingStarted = false;
-
+        timeLeft = 0;
         clearGameTimer();
 
         console.log("✅ NEXT ROUND RESET DONE");

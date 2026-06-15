@@ -528,7 +528,7 @@ function setupRoomListener() {
         if (roomData.phase === "lobby" && roomData.started === false) {
             passShown = false;
             discussionStarted = false;
-
+            showLobby(); ✅ ADD THIS
             console.log("🔄 CLEAN RESET FOR NEW ROUND");
         }
 
@@ -1222,7 +1222,7 @@ window.addEventListener("DOMContentLoaded", () => {
             </div>
             </div>
         `;
-        }
+        } }
 
 
 
@@ -1234,12 +1234,18 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     // NEXT ROUND
     // ==========================
-    async function nextRound() {
-        const roomRef = doc(db, "rooms", roomId);
+async function nextRound() {
+    const roomRef = doc(db, "rooms", roomId);
 
+    console.log("🔄 NEXT ROUND CLICKED");
+
+    try {
         await updateDoc(roomRef, {
             phase: "lobby",
-            players: roomData.players,
+            players: roomData.players.map(p => ({
+                ...p,
+                ready: false // ✅ RESET READY
+            })),
             votes: {},
             impostor: null,
             word: null,
@@ -1250,17 +1256,19 @@ window.addEventListener("DOMContentLoaded", () => {
             voteStarted: null
         });
 
-        // ✅ CLIENT RESET (IMPORTANT)
+        // ✅ LOCAL RESET (VERY IMPORTANT)
         passShown = false;
         discussionStarted = false;
         votingStarted = false;
 
         clearGameTimer();
 
-        console.log("🔄 NEXT ROUND RESET");
+        console.log("✅ NEXT ROUND RESET DONE");
 
-        showLobby();
-    }}
+    } catch (err) {
+        console.error("❌ nextRound error:", err);
+    }
+}
 
     function showPassScreen() {
         clearGameTimer();
@@ -1325,3 +1333,8 @@ window.addEventListener("DOMContentLoaded", () => {
             }
         };
     }
+
+document.getElementById("nextRoundBtn").onclick = () => {
+    document.getElementById("nextRoundBtn").disabled = true;
+    nextRound();
+};

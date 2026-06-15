@@ -147,7 +147,7 @@ window.createRoom = async function () {
 
     console.log("✅ Firebase write success");
 
-    showScreen("created");
+    showCreatedRoom();
 
   } catch (err) {
     console.error("❌ ERROR:", err);

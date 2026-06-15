@@ -112,11 +112,11 @@
     // ==========================
     // CREATE ROOM
     // ==========================
-    window.createRoom = async function () {
 
+window.createRoom = async function () {
+    try {
+        console.log("Creating room...");
 
-        
-    // ✅ ADD THIS FIRST Protect CREATE ROOM when hit the liit
         if (!(await isGameEnabled())) {
             return toast("Server busy. Try later 🚫");
         }
@@ -128,7 +128,6 @@
         roomId = generateRoomId();
         isHost = true;
 
-        // Save room info locally
         localStorage.setItem("roomId", roomId);
         localStorage.setItem("playerName", playerName);
 
@@ -139,19 +138,22 @@
             phase: "lobby",
             started: false,
             createdAt: Date.now(),
-
             players: [
-                {
-                    name: playerName,
-                    ready: false,
-                    score: 0
-                }
+                { name: playerName, ready: false, score: 0 }
             ]
         });
 
+        console.log("✅ Room created successfully");
+
         setupRoomListener();
         showCreatedRoom();
-    };
+
+    } catch (err) {
+        console.error("❌ CREATE ROOM ERROR:", err);
+        toast("Error creating room");
+    }
+};
+
 
     // ==========================
     // SHOW CREATED ROOM SCREEN

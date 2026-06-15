@@ -36,6 +36,19 @@
         }
     }
 
+    
+    // ==========================
+    // APP CONFIG CHECK
+    // ==========================
+    async function isGameEnabled() {
+        const configRef = doc(db, "config", "app");
+        const snap = await getDoc(configRef);
+
+        if (!snap.exists()) return true; // default = allow
+
+        return snap.data().gameEnabled !== false;
+    }
+
     // ==========================
     // DOM HELPERS
     // ==========================
@@ -100,6 +113,13 @@
     // CREATE ROOM
     // ==========================
     window.createRoom = async function () {
+
+
+        
+    // ✅ ADD THIS FIRST Protect CREATE ROOM when hit the liit
+        if (!(await isGameEnabled())) {
+            return toast("Server busy. Try later 🚫");
+        }
 
         playerName = document.getElementById("playerName").value.trim();
 
@@ -176,6 +196,13 @@
     // JOIN ROOM
     // ==========================
     window.joinRoom = async function () {
+
+    
+    // ✅ ADD THIS FIRST
+        if (!(await isGameEnabled())) {
+            return toast("Game temporarily disabled 🚫");
+        }
+
     playerName = document.getElementById("playerName").value.trim();
     const inputRoom = document.getElementById("roomCode").value.trim().toUpperCase();
 
@@ -228,6 +255,13 @@
         "Room: " + roomId;
 
         document.getElementById("quickJoinBtn").onclick = async () => {
+
+            
+        // ✅ ADD HERE
+        if (!(await isGameEnabled())) {
+            return toast("Game is temporarily unavailable 🚫");
+        }
+
         playerName = document.getElementById("quickJoinName").value.trim();
 
         if (!playerName) return toast("Enter name");

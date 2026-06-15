@@ -29,7 +29,7 @@
     let timeLeft = 0; //✅ IMPORTANT
     let passShown = false;
     let currentLanguage = "english";
-    let uiLocked = false;
+    let resultsTriggered = false;
 
     function clearGameTimer() {
         if (timerInterval) {
@@ -399,10 +399,6 @@ function setupRoomListener() {
         roomData = data;
         
         // ✅ BLOCK noisy updates during results
-
-        if (uiLocked && roomData.phase === "results") {
-            return;
-        }
         if (roomData.language && roomData.language !== currentLanguage) {
         currentLanguage = roomData.language;
         loadWords();
@@ -524,22 +520,26 @@ function setupRoomListener() {
         }
 
         if (roomData.phase === "lobby" && roomData.started === false) {
+            console.log("🔄 CLEAN RESET FOR NEW ROUND");
+
+            // ✅ RESET FLAGS FIRST
             passShown = false;
             discussionStarted = false;
+            votingStarted = false;   // ✅ ADD THIS
             resultsShown = false;
-            uiLocked = false; // ✅ VERY IMPORTANT RESET
+            resultsTriggered = false; // ✅ IMPORTANT
 
-            showLobby();
+            // ✅ RESET TIMER
             clearGameTimer();
             timeLeft = 0;
 
-            console.log("🔄 CLEAN RESET FOR NEW ROUND");
+            // ✅ SHOW LOBBY LAST
+            showLobby();
         }
 
         // ✅ RESULTS
         if (roomData.phase === "results" && !resultsShown) {
             resultsShown = true;
-            uiLocked = true; // ✅ LOCK UI
             showResults();
         }
     });
@@ -1157,15 +1157,19 @@ window.addEventListener("DOMContentLoaded", () => {
     // CALCULATE RESULTS
     // ==========================
 
+
     async function calculateResults() {
+        if (resultsTriggered) return; // ✅ BLOCK DUPLICATES
+
+        resultsTriggered = true;
+
         const roomRef = doc(db, "rooms", roomId);
 
         await updateDoc(roomRef, {
             phase: "results"
         });
-
-        showResults();
     }
+
 
 
     // ==========================
@@ -1238,17 +1242,16 @@ window.addEventListener("DOMContentLoaded", () => {
         const newBtn = oldBtn.cloneNode(true);
         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-        // ✅ ADD HERE ✅
         newBtn.style.pointerEvents = "auto";
-        newBtn.style.zIndex = "20";
+        newBtn.style.zIndex = "9999"; // ✅ VERY HIGH now
+        newBtn.style.position = "relative"; // ✅ IMPORTANT
 
-        // ✅ new button clean listener
         newBtn.onclick = async () => {
         console.log("🔄 NEXT ROUND CLICKED");
         newBtn.disabled = true;
-        uiLocked = false;
         await nextRound();
         };
+
 
     }
 

@@ -141,6 +141,7 @@ window.createRoom = async function () {
     await setDoc(roomRef, {
       host: playerName,
       phase: "lobby",
+      language: currentLanguage, // ✅ ADD THIS
       players: [
         { name: playerName, ready: false, score: 0 }
       ]
@@ -248,6 +249,19 @@ window.createRoom = async function () {
 const themeBtn = document.getElementById("themeBtn");
 const langBtn = document.getElementById("langBtn");
 
+function updateLanguageControl() {
+  if (isHost) {
+    langBtn.disabled = false;
+    langBtn.style.opacity = "1";
+    langBtn.style.cursor = "pointer";
+  } else {
+    langBtn.disabled = true;
+    langBtn.style.opacity = "0.5";
+    langBtn.style.cursor = "not-allowed";
+  }
+}
+
+
 const languages = ["english", "arabic", "swedish"];
 
 
@@ -350,6 +364,7 @@ function setupRoomListener() {
     if (unsubscribeRoom) {
         unsubscribeRoom();
     }
+    
 
     const roomRef = doc(db, "rooms", roomId);
 
@@ -377,6 +392,14 @@ function setupRoomListener() {
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
+
+        
+        if (roomData.language && roomData.language !== currentLanguage) {
+        currentLanguage = roomData.language;
+        loadWords();
+        updateLanguageBadge();
+        }
+
 
         // ✅ UPDATE WAITING UI LIVE
         if (roomData.phase === "playing" && !roomData.timeStarted) {
@@ -438,7 +461,7 @@ function setupRoomListener() {
         if (previousHost !== isHost) {
             showLobby();
         }
-
+        updateLanguageControl();
         updateLobbyUI();
 
                 // ✅ PASS SCREEN
@@ -1350,10 +1373,21 @@ async function nextRound() {
 
     
 
-window.setLanguage = function (lang) {
-  currentLanguage = lang;
+window.setLanguage = async function (lang) {
 
-  localStorage.setItem("language", lang); // ✅ save
+  if (!isHost) {
+    return toast("Only host can change language ❌");
+  }
+
+  
+    currentLanguage = lang;
+
+    await updateDoc(doc(db, "rooms", roomId), {
+    language: lang
+    });
+
+
+  localStorage.setItem("language", lang);
 
   loadWords();
 

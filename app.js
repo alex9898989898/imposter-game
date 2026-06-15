@@ -581,21 +581,26 @@ function setupRoomListener() {
         list.innerHTML = "";
 
         roomData.players.forEach(p => {
+            
             const li = document.createElement("li");
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.justifyContent = "space-between";
 
-            const text = document.createElement("span");
-            text.innerText =
+            // LEFT SIDE (✅ + name)
+            const left = document.createElement("div");
+
+            left.innerText =
+                (p.ready ? "✅ " : "⏳ ") +
                 p.name +
-                (p.ready ? " ✅" : " ⏳") +
                 (roomData.host === p.name ? " 👑" : "");
 
-            li.appendChild(text);
+            li.appendChild(left);
 
-            // ✅ SHOW REMOVE BUTTON ONLY FOR HOST and NOT yourself
+            // RIGHT SIDE (❌ button for host)
             if (isHost && p.name !== playerName) {
                 const btn = document.createElement("button");
                 btn.innerText = "❌";
-                btn.style.marginLeft = "10px";
 
                 btn.onclick = () => removePlayer(p.name);
 
@@ -603,6 +608,7 @@ function setupRoomListener() {
             }
 
             list.appendChild(li);
+
         });
 
         document.getElementById("hostBadge").style.display =

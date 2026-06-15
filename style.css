@@ -34,6 +34,12 @@ body {
 }
 
 
+#playersList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 
 /* Background effect */
 

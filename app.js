@@ -1260,7 +1260,7 @@ window.addEventListener("DOMContentLoaded", () => {
         console.log("🔄 NEXT ROUND RESET");
 
         showLobby();
-    }
+    }}
 
     function showPassScreen() {
         clearGameTimer();

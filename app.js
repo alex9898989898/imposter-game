@@ -905,7 +905,20 @@ async function updateDiscussionTime(value) {
 
     toast(`Discussion time: ${value}s`);
 }
+function updateDiscussionTimeButtons() {
+    const timeButtons = document.querySelectorAll(".time-btn");
+    const current = Number(roomData?.discussionTime || 60);
 
+    timeButtons.forEach(btn => {
+        const value = Number(btn.dataset.time);
+
+        if (value === current) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+}
     // ==========================
     // SHOW LOBBY
     // ==========================
@@ -918,7 +931,7 @@ function showLobby() {
     const leaveBtn = document.getElementById("leaveBtn");
 
     const discussionTimeWrap = document.getElementById("discussionTimeWrap");
-    const discussionTimeSelect = document.getElementById("discussionTimeSelect");
+    const timeButtons = document.querySelectorAll(".time-btn");
 
     if (isHost) {
         startBtn.style.display = "block";
@@ -927,31 +940,28 @@ function showLobby() {
             discussionTimeWrap.style.display = "block";
         }
 
-        if (discussionTimeSelect) {
-            discussionTimeSelect.disabled = false;
-            discussionTimeSelect.value = String(roomData?.discussionTime || 60);
+        timeButtons.forEach(btn => {
+            btn.disabled = false;
 
-            discussionTimeSelect.onchange = (e) => {
-                updateDiscussionTime(e.target.value);
+            btn.onclick = () => {
+                const value = Number(btn.dataset.time);
+                updateDiscussionTime(value);
             };
-        }
+        });
     } else {
         startBtn.style.display = "none";
 
-        // ✅ either hide for non-host:
         if (discussionTimeWrap) {
             discussionTimeWrap.style.display = "none";
         }
-
-        // OR if you want non-hosts to see it but not change it, tell me and I’ll give that version
     }
 
     startBtn.onclick = startGame;
     readyBtn.onclick = toggleReady;
     leaveBtn.onclick = leaveRoom;
+
+    updateDiscussionTimeButtons();
 }
-
-
     // ==========================
     // UPDATE LOBBY UI
     // ==========================
@@ -961,7 +971,7 @@ function updateLobbyUI() {
 
     document.getElementById("roomTitle").innerText =
         `${roomId} (${currentLanguage.toUpperCase()})`;
-
+        updateDiscussionTimeButtons();
     const discussionTimeSelect = document.getElementById("discussionTimeSelect");
     if (discussionTimeSelect && roomData?.discussionTime) {
         discussionTimeSelect.value = String(roomData.discussionTime);

@@ -220,17 +220,17 @@
     <div id="hostBadge" class="host-badge">
       HOST
     </div>
-    <div id="discussionTimeWrap" class="settings-box">
-  <label for="discussionTimeSelect" class="settings-label">
-    ⏱ Discussion Time
-  </label>
 
-  <select id="discussionTimeSelect" class="input">
-    <option value="30">30 sec</option>
-    <option value="60">60 sec</option>
-    <option value="90">90 sec</option>
-    <option value="120">120 sec</option>
-  </select>
+
+<div id="discussionTimeWrap" class="settings-box">
+  <div class="settings-label">⏱ Discussion Time</div>
+
+  <div id="discussionTimeButtons" class="time-options">
+    <button type="button" class="time-btn" data-time="30">30s</button>
+    <button type="button" class="time-btn active" data-time="60">60s</button>
+    <button type="button" class="time-btn" data-time="90">90s</button>
+    <button type="button" class="time-btn" data-time="120">120s</button>
+  </div>
 </div>
 
     <div class="players-box">

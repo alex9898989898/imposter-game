@@ -145,13 +145,11 @@ body.light .input::placeholder {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 60px);
-
-  pointer-events: auto; /* ✅ allow active */
-  z-index: 100; /* ✅ always on top */
+  min-height: calc(100dvh - 60px);
+  pointer-events: auto;
+  z-index: 100;
   animation: fadeIn 0.3s ease;
 }
-
 
 #nextRoundBtn {
   position: relative;
@@ -1169,4 +1167,9 @@ body.light .action-cyan {
   justify-content: center;
   align-items: center;
   padding: 12px;
+}
+
+#startScreen.active {
+  align-items: flex-start;
+  padding-top: 40px;
 }

@@ -30,7 +30,7 @@
     let passShown = false;
     let currentLanguage = "english";
     let resultsTriggered = false;
-
+    let nextRoundStarted = false;
     function clearGameTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -383,15 +383,9 @@ function setupRoomListener() {
     if (unsubscribeRoom) {
         unsubscribeRoom();
     }
-    
-
     const roomRef = doc(db, "rooms", roomId);
-
-
     console.log("=================================");
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
-
-
 
         if (!snap.exists()) {
             localStorage.removeItem("roomId");
@@ -549,7 +543,7 @@ function setupRoomListener() {
             votingStarted = false;
             resultsShown = false;
             resultsTriggered = false;
-
+            nextRoundStarted = false;
             // ✅ reset timers
             clearGameTimer();
             timeLeft = 0;
@@ -566,7 +560,28 @@ function setupRoomListener() {
                 showResults();
             }
         }
+        // ✅ NEXT ROUND SYNC SYSTEM
+        if (roomData.phase === "results") {
 
+            const ready = roomData.nextRoundReady || [];
+            const total = roomData.players.length;
+
+            console.log("NEXT ROUND READY:", ready.length, "/", total);
+
+            // ✅ ONLY HOST starts next round
+            if (
+                isHost &&
+                ready.length === total &&
+                total > 0 &&
+                !nextRoundStarted // ✅ ADD LOCK
+            ) {
+                nextRoundStarted = true; // ✅ LOCK IT
+
+                console.log("🚀 STARTING NEXT ROUND (ONCE)");
+
+                nextRound();
+            }
+        }
 
         // ✅ SAFETY SCREEN FIX
         if (roomData.phase === "lobby") {
@@ -879,6 +894,7 @@ window.addEventListener("DOMContentLoaded", () => {
             phase: "playing",
             word: randomWord,
             impostor: randomPlayer.name,
+            nextRoundReady: [], // ✅ ADD THIS
             revealedPlayers: [],
             readyForDiscussion: [],
             votes: {},
@@ -1282,19 +1298,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const oldBtn = document.getElementById("nextRoundBtn");
 
-        // ✅ replace the button entirely
+        // ✅ replace button
         const newBtn = oldBtn.cloneNode(true);
         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-        newBtn.style.pointerEvents = "auto";
-        newBtn.style.zIndex = "9999"; // ✅ VERY HIGH now
-        newBtn.style.position = "relative"; // ✅ IMPORTANT
+        // ✅ update text LIVE based on DB
+        function updateNextBtn() {
+            const ready = roomData?.nextRoundReady || [];
+            newBtn.innerText = `Next Round (${ready.length}/${roomData.players.length})`;
+        }
+
+        // ✅ call immediately
+        updateNextBtn();     
 
         newBtn.onclick = async () => {
-        console.log("🔄 NEXT ROUND CLICKED");
-        newBtn.disabled = true;
-        await nextRound();
+            console.log("✅ Ready for next round");
+
+            newBtn.disabled = true;
+
+            await updateDoc(doc(db, "rooms", roomId), {
+                nextRoundReady: arrayUnion(playerName)
+            });
         };
+
 
 
     }
@@ -1325,6 +1351,7 @@ async function nextRound() {
                 phase: "lobby",
                 started: false,
                 language: roomData.language, // ✅ keep language stable
+                nextRoundReady: [], // ✅ RESET HERE
 
                 // ✅ reset game fields
                 votes: {},
@@ -1335,8 +1362,10 @@ async function nextRound() {
                 readyForDiscussion: [],
                 revealedPlayers: [],
                 
+                
                 timeStarted: null,
                 voteStarted: null,
+                
 
                 players: roomData.players.map(p => ({
                     ...p,

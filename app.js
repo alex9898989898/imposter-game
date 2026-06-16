@@ -490,7 +490,8 @@ function setupRoomListener() {
         if (
             roomData.phase === "playing" &&
             roomData.timeStarted === null &&
-            !passShown
+            !passShown &&
+            !resultsShown   // ✅ ADD THIS
         ) {
             console.log("📺 SHOW PASS SCREEN ONCE");
 
@@ -539,29 +540,43 @@ function setupRoomListener() {
             updateVotingUI(); // ✅ NEW FUNCTION
         }
 
-        if (roomData.phase === "lobby" && roomData.started === false) {
-            console.log("🔄 CLEAN RESET FOR NEW ROUND");
+        if (roomData.phase === "lobby") {
+            console.log("🔄 FULL RESET (LOBBY)");
 
-            // ✅ RESET FLAGS FIRST
+            // ✅ reset ALL flags
             passShown = false;
             discussionStarted = false;
-            votingStarted = false;   // ✅ ADD THIS
+            votingStarted = false;
             resultsShown = false;
-            resultsTriggered = false; // ✅ IMPORTANT
+            resultsTriggered = false;
 
-            // ✅ RESET TIMER
+            // ✅ reset timers
             clearGameTimer();
             timeLeft = 0;
 
-            // ✅ SHOW LOBBY LAST
+            // ✅ ALWAYS show lobby cleanly
             showLobby();
         }
 
+
         // ✅ RESULTS
-        if (roomData.phase === "results" && !resultsShown) {
-            resultsShown = true;
-            showResults();
+        if (roomData.phase === "results") {
+            if (!resultsShown) {
+                resultsShown = true;
+                showResults();
+            }
         }
+
+
+        // ✅ SAFETY SCREEN FIX
+        if (roomData.phase === "lobby") {
+            if (!screens.lobby.classList.contains("active")) {
+                showLobby();
+            }
+        }
+
+
+
     });
 }
 
@@ -1309,6 +1324,7 @@ async function nextRound() {
             await updateDoc(roomRef, {
                 phase: "lobby",
                 started: false,
+                language: roomData.language, // ✅ keep language stable
 
                 // ✅ reset game fields
                 votes: {},

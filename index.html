@@ -202,66 +202,55 @@
 </section>
 
     <!-- Lobby -->
-    <section id="lobbyScreen" class="screen">
+   <!-- Lobby -->
+<section id="lobbyScreen" class="screen">
 
-      <div class="card">
+  <div class="card">
 
-        <div class="room-header">
+    <div class="room-header">
+      <h2 id="roomTitle">
+        ROOM
+      </h2>
 
-          <h2 id="roomTitle">
-            ROOM
-          </h2>
+      <span id="playerCount">
+        0 Players
+      </span>
+    </div>
 
-          <span id="playerCount">
-            0 Players
-          </span>
+    <div id="hostBadge" class="host-badge">
+      HOST
+    </div>
 
-        </div>
+    <div class="players-box">
+      <ul id="playersList"></ul>
+    </div>
 
-        <div id="hostBadge" class="host-badge">
-          HOST
-        </div>
+    <div class="button-row">
+      <button
+        id="readyBtn"
+        class="btn btn-success"
+      >
+        ✅ Ready
+      </button>
 
-        <div class="players-box">
+      <button
+        id="leaveBtn"
+        class="btn btn-danger"
+      >
+        🚪 Leave
+      </button>
+    </div>
 
-          <ul id="playersList">
-          </ul>
+    <button
+      id="startGameBtn"
+      class="btn btn-primary full"
+    >
+      ▶ Start Game
+    </button>
 
-        </div>
+  </div>
 
-<div class="button-row">
-  <button
-    id="readyBtn"
-    class="btn btn-success"
-  >
-    ✅ Ready
-  </button>
-
-  <button
-    id="leaveBtn"
-    class="btn btn-danger"
-  >
-    🚪 Leave
-  </button>
-</div>
-
-<button
-  id="startGameBtn"
-  class="btn btn-primary full"
->
-  ▶ Start Game
-</button>
-
-        <button
-          id="startGameBtn"
-          class="btn btn-primary full"
-        >
-          ▶ Start Game
-        </button>
-
-      </div>
-
-    </section>
+</section>
 
     <!-- Pass Device Screen -->
     <section id="passScreen" class="screen">

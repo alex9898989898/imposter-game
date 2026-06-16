@@ -30,10 +30,12 @@
   <header class="topbar">
 
     
-    
+
 <div id="homeLogo" class="logo" role="button" tabindex="0" aria-label="Go to home page">
   <img src="./logo.png" alt="Imposter logo" class="logo-img">
+  <span>Elbrus.forening</span>
 </div>
+
 
 
 
@@ -97,9 +99,10 @@
           ➕ Create
         </button>
 
-        <button type="button" id="modeJoinBtn" class="mode-btn">
-          🚪 Join
-        </butto>
+       <button type="button" id="modeJoinBtn" class="mode-btn">
+        🚪 Join
+      </button>
+
 
         </div>
 
@@ -167,23 +170,23 @@
       readonly
     />
 
-    <div class="action-grid">
-      <button id="copyLinkBtn" class="action-btn action-coral">
-        🔗 Copy Link
-      </button>
+<div class="action-grid">
+  <button id="copyLinkBtn" class="action-btn action-coral">
+    <i class="fa-solid fa-link"></i> Copy Link
+  </button>
 
-      <button id="inviteBtn" class="action-btn action-cyan">
-        👥 Invite
-      </button>
+  <button id="inviteBtn" class="action-btn action-cyan">
+    <i class="fa-solid fa-user-plus"></i> Invite
+  </button>
 
-      <button id="qrToggleBtn" class="action-btn action-dark">
-        ▦ QR Code
-      </button>
+  <button id="qrToggleBtn" class="action-btn action-dark">
+    <i class="fa-solid fa-qrcode"></i> QR Code
+  </button>
 
-      <button id="shareBtn" class="action-btn action-dark">
-        ↗ Share
-      </button>
-    </div>
+  <button id="shareBtn" class="action-btn action-dark">
+    <i class="fa-solid fa-share-nodes"></i> Share
+  </button>
+</div>
 
     <div id="qrWrap" style="display:none;">
       <div id="qrCode"></div>
@@ -399,7 +402,9 @@
 
 
 <div class="instagram-footer">
-  <https://www.instagram.com/elbrus.forening
+  <a href="https://www.instagram.com/elbrus.forening"
+     target="_blank"
+     rel="noopener noreferrer">
     <i class="fa-brands fa-instagram"></i>
     Follow Us
   </a>

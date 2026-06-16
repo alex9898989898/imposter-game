@@ -1202,3 +1202,45 @@ body.light .action-cyan {
   align-items: flex-start;
   padding-top: 40px;
 }
+.instagram-footer {
+  position: fixed;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+}
+
+.instagram-footer a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: white;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.instagram-footer a:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.14);
+}
+
+.instagram-footer i {
+  color: #ff4fa3;
+  font-size: 18px;
+}
+
+body.light .instagram-footer a {
+  color: #111;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.action-btn i {
+  margin-right: 8px;
+}

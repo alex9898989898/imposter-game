@@ -520,10 +520,15 @@ function setupRoomListener() {
             }
         }
         // ✅ discussion
-        if (roomData.phase === "discussion" && !discussionStarted) {
-            discussionStarted = true;
-            showDiscussion();
+
+        if (roomData.phase === "discussion") {
+            if (!screens.discussion.classList.contains("active")) {
+                console.log("📺 FORCE SHOW DISCUSSION");
+                discussionStarted = true;
+                showDiscussion();
+            }
         }
+
         // ✅ VOTING
         if (
             roomData.phase === "voting" &&
@@ -964,12 +969,14 @@ window.addEventListener("DOMContentLoaded", () => {
         const roomRef = doc(db, "rooms", roomId);
         console.log("🚀 STARTING DISCUSSION (HOST)");
 
+        discussionStarted = true; // ✅ ADD THIS
+
         try {
 
             await updateDoc(roomRef, {
                 phase: "discussion",
                 timeStarted: Date.now(),
-                discussionTime: 60 //change time - disc
+                discussionTime: 60
             });
 
         } catch (err) {

@@ -1208,45 +1208,120 @@ body.light .action-cyan {
   align-items: flex-start;
   padding-top: 40px;
 }
-.instagram-footer {
-  position: fixed;
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999;
+
+.action-btn i {
+  margin-right: 8px;
 }
 
-.instagram-footer a {
+/* =========================
+   PROFESSIONAL FOOTER
+========================= */
+
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 10, 20, 0),
+      rgba(4, 10, 20, 0.72) 35%,
+      rgba(4, 10, 20, 0.94)
+    );
+  backdrop-filter: blur(10px);
+}
+
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
   display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.footer-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.72);
+}
+
+.footer-social {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
   color: white;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  padding: 10px 16px;
-  border-radius: 999px;
   font-weight: 600;
-  backdrop-filter: blur(10px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
   transition: all 0.2s ease;
 }
 
-.instagram-footer a:hover {
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.14);
+.footer-social:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.10);
 }
 
-.instagram-footer i {
+.footer-social i {
   color: #ff4fa3;
   font-size: 18px;
 }
 
-body.light .instagram-footer a {
-  color: #111;
-  background: rgba(255,255,255,0.9);
+/* light mode */
+body.light .site-footer {
+  border-top: 1px solid rgba(0,0,0,0.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0),
+      rgba(255,255,255,0.78) 35%,
+      rgba(255,255,255,0.95)
+    );
+}
+
+body.light .footer-label {
+  color: rgba(0,0,0,0.6);
+}
+
+body.light .footer-social {
+  color: #111827;
+  background: rgba(0,0,0,0.04);
   border: 1px solid rgba(0,0,0,0.08);
 }
 
-.action-btn i {
-  margin-right: 8px;
+/* make sure content has breathing room above footer */
+#app {
+  padding-bottom: 78px;
+}
+
+@media (max-width: 600px) {
+  .footer-inner {
+    gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .footer-label {
+    width: 100%;
+    text-align: center;
+  }
+
+  .footer-social {
+    font-size: 14px;
+    padding: 9px 12px;
+  }
+
+  #app {
+    padding-bottom: 88px;
+  }
 }

@@ -102,16 +102,21 @@
 }
 
 
-    function showScreen(name) {
-        Object.values(screens).forEach(s => {
-            s.classList.remove("active");
-            s.style.pointerEvents = "none"; // ✅ block old screens
-        });
+function showScreen(name) {
+    Object.values(screens).forEach(s => {
+        s.classList.remove("active");
+        s.style.pointerEvents = "none";
+    });
 
-        const active = screens[name];
-        active.classList.add("active");
-        active.style.pointerEvents = "auto"; // ✅ allow clicks only here
+    const active = screens[name];
+    active.classList.add("active");
+    active.style.pointerEvents = "auto";
+
+    const footer = document.querySelector(".site-footer");
+    if (footer) {
+        footer.style.display = name === "start" ? "block" : "none";
     }
+}
 
     // ==========================
     // TOAST

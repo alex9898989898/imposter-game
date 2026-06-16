@@ -238,7 +238,7 @@ window.createRoom = async function () {
       phase: "lobby",
       started: false,
       language: currentLanguage,
-
+      discussionTime: 60,
       nextRoundReady: [],
       readyForDiscussion: [],
       revealedPlayers: [],
@@ -893,44 +893,84 @@ if (roomData.phase === "results") {
 }
 
 
+async function updateDiscussionTime(value) {
+    if (!isHost) return;
+    if (roomData.phase !== "lobby") return;
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    await updateDoc(roomRef, {
+        discussionTime: Number(value)
+    });
+
+    toast(`Discussion time: ${value}s`);
+}
 
     // ==========================
     // SHOW LOBBY
     // ==========================
-    function showLobby() {
-        justCreatedRoom = false;
-        showScreen("lobby");
+function showLobby() {
+    justCreatedRoom = false;
+    showScreen("lobby");
 
-        if (isHost) {
-            document.getElementById("startGameBtn").style.display = "block";
-        } else {
-            document.getElementById("startGameBtn").style.display = "none";
+    const startBtn = document.getElementById("startGameBtn");
+    const readyBtn = document.getElementById("readyBtn");
+    const leaveBtn = document.getElementById("leaveBtn");
+
+    const discussionTimeWrap = document.getElementById("discussionTimeWrap");
+    const discussionTimeSelect = document.getElementById("discussionTimeSelect");
+
+    if (isHost) {
+        startBtn.style.display = "block";
+
+        if (discussionTimeWrap) {
+            discussionTimeWrap.style.display = "block";
         }
 
-        document.getElementById("startGameBtn").onclick = startGame;
-        document.getElementById("readyBtn").onclick = toggleReady;
-        document.getElementById("leaveBtn").onclick = leaveRoom;
+        if (discussionTimeSelect) {
+            discussionTimeSelect.disabled = false;
+            discussionTimeSelect.value = String(roomData?.discussionTime || 60);
+
+            discussionTimeSelect.onchange = (e) => {
+                updateDiscussionTime(e.target.value);
+            };
+        }
+    } else {
+        startBtn.style.display = "none";
+
+        // ✅ either hide for non-host:
+        if (discussionTimeWrap) {
+            discussionTimeWrap.style.display = "none";
+        }
+
+        // OR if you want non-hosts to see it but not change it, tell me and I’ll give that version
     }
 
+    startBtn.onclick = startGame;
+    readyBtn.onclick = toggleReady;
+    leaveBtn.onclick = leaveRoom;
+}
 
 
     // ==========================
     // UPDATE LOBBY UI
     // ==========================
    
-    function updateLobbyUI() {
-        if (!roomData) return;
+function updateLobbyUI() {
+    if (!roomData) return;
 
-                
-        document.getElementById("roomTitle").innerText =
-            `${roomId} (${currentLanguage.toUpperCase()})`;
+    document.getElementById("roomTitle").innerText =
+        `${roomId} (${currentLanguage.toUpperCase()})`;
 
+    const discussionTimeSelect = document.getElementById("discussionTimeSelect");
+    if (discussionTimeSelect && roomData?.discussionTime) {
+        discussionTimeSelect.value = String(roomData.discussionTime);
+    }
 
-        // ✅ READY COUNT HERE
-        const readyCount = roomData.players.filter(p => p.ready).length;
+    const readyCount = roomData.players.filter(p => p.ready).length;
 
-        document.getElementById("playerCount").innerText =
-            `${readyCount}/${roomData.players.length} Ready`;
+    document.getElementById("playerCount").innerText =
+        `${readyCount}/${roomData.players.length} Ready`;
 
         const list = document.getElementById("playersList");
         list.innerHTML = "";
@@ -1467,28 +1507,24 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
 
 
-    async function startDiscussion() {
-        const roomRef = doc(db, "rooms", roomId);
-        console.log("🚀 STARTING DISCUSSION (HOST)");
+async function startDiscussion() {
+    const roomRef = doc(db, "rooms", roomId);
+    console.log("🚀 STARTING DISCUSSION (HOST)");
 
-        discussionStarted = true; // ✅ ADD THIS
+    discussionStarted = true;
 
-        try {
+    try {
+        await updateDoc(roomRef, {
+            phase: "discussion",
+            timeStarted: Date.now(),
+            discussionTime: roomData?.discussionTime || 60
+        });
 
-            await updateDoc(roomRef, {
-                phase: "discussion",
-                timeStarted: Date.now(),
-                discussionTime: 60
-            });
-
-        } catch (err) {
-
-            console.error(err);
-            toast("Connection error");
-
-        }
+    } catch (err) {
+        console.error(err);
+        toast("Connection error");
     }
-
+}
 
 
 

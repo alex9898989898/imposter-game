@@ -188,8 +188,10 @@ window.createRoom = async function () {
     });
 
     // ✅ SAVE SESSION AFTER FIREBASE SUCCESS
-    localStorage.setItem("roomId", roomId);
-    localStorage.setItem("playerName", playerName);
+
+    sessionStorage.setItem("roomId", roomId);
+    sessionStorage.setItem("playerName", playerName);
+
 
     console.log("✅ Firebase write success");
     setupRoomListener();
@@ -303,8 +305,10 @@ window.joinRoom = async function () {
         })
     });
 
-    localStorage.setItem("roomId", roomId);
-    localStorage.setItem("playerName", playerName);
+
+sessionStorage.setItem("roomId", roomId);
+sessionStorage.setItem("playerName", playerName);
+
 
     setupRoomListener();
     showLobby();
@@ -418,8 +422,10 @@ themeBtn.addEventListener("click", () => {
             })
         });
 
-        localStorage.setItem("roomId", roomId);
-        localStorage.setItem("playerName", playerName);
+
+    sessionStorage.setItem("roomId", roomId);
+    sessionStorage.setItem("playerName", playerName);
+
 
         setupRoomListener();
         showLobby();
@@ -443,8 +449,10 @@ function setupRoomListener() {
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
         if (!snap.exists()) {
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("playerName");
+            
+            sessionStorage.removeItem("roomId");
+            sessionStorage.removeItem("playerName");
+
 
             toast("Room closed");
             location.reload();
@@ -533,8 +541,10 @@ function setupRoomListener() {
         const stillInRoom = roomData.players.some(p => p.name === playerName);
         if (!stillInRoom) {
             toast("You were removed ❌");
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("playerName");
+            
+            sessionStorage.removeItem("roomId");
+            sessionStorage.removeItem("playerName");
+
             setTimeout(() => location.reload(), 1000);
             return;
         }
@@ -838,8 +848,10 @@ function setupRoomListener() {
         }
 
         await updateDoc(roomRef, update);
-        localStorage.removeItem("roomId");
-        localStorage.removeItem("playerName");
+
+        sessionStorage.removeItem("roomId");
+        sessionStorage.removeItem("playerName");
+
 
         location.reload();
     }
@@ -873,8 +885,10 @@ function setupRoomListener() {
 
 
     async function tryRestoreSession() {
-    const savedRoomId = localStorage.getItem("roomId");
-    const savedPlayerName = localStorage.getItem("playerName");
+   
+    const savedRoomId = sessionStorage.getItem("roomId");
+    const savedPlayerName = sessionStorage.getItem("playerName");
+
 
     if (!savedRoomId || !savedPlayerName) return false;
 
@@ -883,8 +897,10 @@ function setupRoomListener() {
         const snap = await getDoc(roomRef);
 
         if (!snap.exists()) {
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("playerName");
+            
+        sessionStorage.removeItem("roomId");
+        sessionStorage.removeItem("playerName");
+
             return false;
         }
 
@@ -895,8 +911,10 @@ function setupRoomListener() {
         );
 
         if (!stillExists) {
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("playerName");
+           
+            sessionStorage.removeItem("roomId");
+            sessionStorage.removeItem("playerName");
+
             return false;
         }
 

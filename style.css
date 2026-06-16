@@ -1075,3 +1075,15 @@ body.light .mode-switch {
   padding: 14px;
   border-radius: 14px;
 }
+.logo {
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.logo:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

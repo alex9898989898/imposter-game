@@ -1083,10 +1083,70 @@ function setupRoomListener() {
     }
 }
 
+async function goToMainPage() {
+    try {
+        console.log("🏠 Logo clicked -> go to main page");
+
+        // stop listeners/timers first
+        stopPresenceHeartbeat();
+        clearGameTimer();
+
+        if (unsubscribeRoom) {
+            unsubscribeRoom();
+            unsubscribeRoom = null;
+        }
+
+        // if user is still in a room, leave properly
+        const stillInRoom =
+            roomId &&
+            playerName &&
+            roomData?.players?.some(p => p.name === playerName);
+
+        if (stillInRoom) {
+            await leaveRoom();
+            return; // leaveRoom already reloads
+        }
+
+        // otherwise just clear session and return home
+        sessionStorage.removeItem("roomId");
+        sessionStorage.removeItem("playerName");
+        sessionStorage.removeItem("playerSessionId");
+
+        roomId = null;
+        playerName = null;
+        roomData = null;
+        isHost = false;
+        resultsShown = false;
+        resultsTriggered = false;
+        nextRoundStarted = false;
+        discussionStarted = false;
+        votingStarted = false;
+        passShown = false;
+        justCreatedRoom = false;
+        lastPhase = null;
+
+        // remove ?room=... from URL
+        window.history.replaceState({}, "", window.location.pathname);
+
+        showScreen("start");
+        setStartMode("create");
+
+    } catch (err) {
+        console.error("❌ goToMainPage failed:", err);
+
+        // fallback: hard reload to clean home URL
+        sessionStorage.removeItem("roomId");
+        sessionStorage.removeItem("playerName");
+        sessionStorage.removeItem("playerSessionId");
+
+        window.location.href = window.location.pathname;
+    }
+}
+
     // ==========================
     // START APP
     // ==========================
-    async function startApp() {
+async function startApp() {
     const savedLang = localStorage.getItem("language");
     if (savedLang) currentLanguage = savedLang;
     updateLanguageBadge();
@@ -1115,16 +1175,27 @@ function setupRoomListener() {
         modeJoinBtn.addEventListener("click", () => setStartMode("join"));
     }
 
+    // ✅ logo click -> back to home
+    const homeLogo = document.getElementById("homeLogo");
+    if (homeLogo) {
+        homeLogo.addEventListener("click", goToMainPage);
+
+        homeLogo.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                goToMainPage();
+            }
+        });
+    }
+
     showScreen("start");
     setStartMode("create");
 
     await loadWords();
 
-    // ✅ restore previous session if page was refreshed
     const restored = await tryRestoreSession();
     if (restored) return;
 
-    // ✅ check shared room link after restore attempt
     if (quickJoinCheck()) return;
 }
 

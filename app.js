@@ -597,6 +597,8 @@ function setupRoomListener() {
                 showResults();
             }
         }
+    
+    
         // ✅ NEXT ROUND SYNC SYSTEM
 
         if (roomData.phase === "results") {
@@ -1408,7 +1410,7 @@ window.addEventListener("DOMContentLoaded", () => {
     };
 
 
-
+}
 
 
 

@@ -914,7 +914,6 @@ body.lose .background {
   100% { transform: scale(1); }
 }
 
-
 /* =========================
    START SCREEN - OPTION B
 ========================= */
@@ -934,7 +933,7 @@ body.lose .background {
 .start-subtitle {
   text-align: center;
   font-size: 16px;
-  opacity: 0.9;
+  opacity: 0.92;
   margin-bottom: 6px;
 }
 
@@ -942,13 +941,13 @@ body.lose .background {
   text-align: center;
   font-size: 14px;
   opacity: 0.65;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .mode-switch {
   display: flex;
   gap: 10px;
-  margin: 14px 0 10px;
+  margin: 14px 0 12px;
   background: rgba(255,255,255,0.06);
   padding: 6px;
   border-radius: 14px;
@@ -963,8 +962,8 @@ body.light .mode-switch {
   border: none;
   background: transparent;
   color: var(--text);
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -974,6 +973,7 @@ body.light .mode-switch {
   background: #3b82f6;
   color: white;
   box-shadow: 0 6px 18px rgba(59,130,246,0.25);
+  transform: scale(1.02);
 }
 
 .mode-btn:hover {
@@ -982,4 +982,12 @@ body.light .mode-switch {
 
 .join-only {
   animation: fadeIn 0.25s ease;
+}
+
+#createRoomBtn,
+#joinRoomBtn {
+  margin-top: 14px;
+  font-size: 18px;
+  padding: 14px;
+  border-radius: 14px;
 }

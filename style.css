@@ -913,3 +913,73 @@ body.lose .background {
   50% { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
+
+
+/* =========================
+   START SCREEN - OPTION B
+========================= */
+
+.start-card {
+  max-width: 430px;
+}
+
+.start-title {
+  text-align: center;
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.start-subtitle {
+  text-align: center;
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+
+.start-languages {
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.65;
+  margin-bottom: 18px;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 10px;
+  background: rgba(255,255,255,0.06);
+  padding: 6px;
+  border-radius: 14px;
+}
+
+body.light .mode-switch {
+  background: rgba(0,0,0,0.05);
+}
+
+.mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 6px 18px rgba(59,130,246,0.25);
+}
+
+.mode-btn:hover {
+  transform: translateY(-1px);
+}
+
+.join-only {
+  animation: fadeIn 0.25s ease;
+}

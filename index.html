@@ -74,14 +74,10 @@
 
     <!-- Start Screen -->
     <section id="startScreen" class="screen">
-
-      <div class="card">
-
-        <h1>🕵️ IMPOSTER</h1>
-
-        <p class="subtitle">
-          Swedish • Arabic • English
-        </p>
+      <div class="card start-card">
+        <h1 class="start-title">🕵️ IMPOSTER</h1>
+        <p class="start-subtitle">Create a room or join with a code</p>
+        <p class="start-languages">Swedish • Arabic • English</p>
 
         <input
           id="playerName"
@@ -91,34 +87,35 @@
           placeholder="Your Name"
         />
 
+        <div class="mode-switch">
+          <button type="button" id="modeCreateBtn" class="mode-btn active">
+            Create
+          </button>
+          <button type="button" id="modeJoinBtn" class="mode-btn">
+            Join
+          </button>
+        </div>
+
+        <div id="roomCodeWrap" class="join-only" style="display:none;">
+          <input
+            id="roomCode"
+            class="input"
+            type="text"
+            maxlength="6"
+            placeholder="Room Code"
+          />
+        </div>
+
         <button type="button" id="createRoomBtn" class="btn btn-primary">
           ➕ Create Room
         </button>
 
-        <div class="divider">
-          OR
-        </div>
-
-        <input
-          id="roomCode"
-          class="input"
-          type="text"
-          maxlength="6"
-          placeholder="Room Code"
-        />
-
-        
-          <button type="button"
-            id="joinRoomBtn"
-            class="btn btn-success"
-          >
-
+        <button type="button" id="joinRoomBtn" class="btn btn-success" style="display:none;">
           🚪 Join Room
         </button>
-
       </div>
-
     </section>
+
 
     <!-- Join From Shared Link -->
     <section id="quickJoinScreen" class="screen">

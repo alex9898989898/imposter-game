@@ -33,6 +33,7 @@
     let nextRoundStarted = false;
     let lastPhase = null;
     let justCreatedRoom = false;
+    let startMode = "create";
     function clearGameTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -832,20 +833,39 @@ function setupRoomListener() {
 
         location.reload();
     }
+    function setStartMode(mode) {
+        startMode = mode;
 
+        const createBtn = document.getElementById("createRoomBtn");
+        const joinBtn = document.getElementById("joinRoomBtn");
+        const roomCodeWrap = document.getElementById("roomCodeWrap");
+        const modeCreateBtn = document.getElementById("modeCreateBtn");
+        const modeJoinBtn = document.getElementById("modeJoinBtn");
 
+        if (mode === "create") {
+            createBtn.style.display = "block";
+            joinBtn.style.display = "none";
+            roomCodeWrap.style.display = "none";
 
+            modeCreateBtn.classList.add("active");
+            modeJoinBtn.classList.remove("active");
+        } else {
+            createBtn.style.display = "none";
+            joinBtn.style.display = "block";
+            roomCodeWrap.style.display = "block";
+
+            modeCreateBtn.classList.remove("active");
+            modeJoinBtn.classList.add("active");
+        }
+    }
     // ==========================
     // START APP
     // ==========================
     async function startApp() {
-
-
         const savedLang = localStorage.getItem("language");
         if (savedLang) currentLanguage = savedLang;
         updateLanguageBadge();
 
-        // ✅ CONNECT BUTTONS FIRST (VERY IMPORTANT)
         const createBtn = document.getElementById("createRoomBtn");
         if (createBtn) {
             createBtn.addEventListener("click", () => {
@@ -862,13 +882,19 @@ function setupRoomListener() {
             });
         }
 
-        // ✅ SHOW START SCREEN IMMEDIATELY
-        showScreen("start");
+        const modeCreateBtn = document.getElementById("modeCreateBtn");
+        const modeJoinBtn = document.getElementById("modeJoinBtn");
 
-        // ✅ THEN load words (in background)
+        if (modeCreateBtn && modeJoinBtn) {
+            modeCreateBtn.addEventListener("click", () => setStartMode("create"));
+            modeJoinBtn.addEventListener("click", () => setStartMode("join"));
+        }
+
+        showScreen("start");
+        setStartMode("create");
+
         loadWords();
 
-        // ✅ check link
         if (quickJoinCheck()) return;
     }
 

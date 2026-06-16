@@ -161,7 +161,7 @@ window.createRoom = async function () {
 
     roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
     isHost = true;
-    justCreatedRoom = true; // ✅ keep only this one
+    justCreatedRoom = true;
 
     console.log("Room ID:", roomId);
     console.log("Player:", playerName);
@@ -169,26 +169,30 @@ window.createRoom = async function () {
     const roomRef = doc(db, "rooms", roomId);
 
     await setDoc(roomRef, {
-    host: playerName,
-    phase: "lobby",
-    started: false,
-    language: currentLanguage,
+      host: playerName,
+      phase: "lobby",
+      started: false,
+      language: currentLanguage,
 
-    nextRoundReady: [],
-    readyForDiscussion: [],
-    revealedPlayers: [],
-    votes: {},
+      nextRoundReady: [],
+      readyForDiscussion: [],
+      revealedPlayers: [],
+      votes: {},
 
-    voteStarted: null,
-    timeStarted: null,
+      voteStarted: null,
+      timeStarted: null,
 
-    players: [
+      players: [
         { name: playerName, ready: false, score: 0 }
-    ]
+      ]
     });
 
+    // ✅ SAVE SESSION AFTER FIREBASE SUCCESS
+    localStorage.setItem("roomId", roomId);
+    localStorage.setItem("playerName", playerName);
+
     console.log("✅ Firebase write success");
-    setupRoomListener();   
+    setupRoomListener();
     showCreatedRoom();
 
   } catch (err) {
@@ -196,7 +200,6 @@ window.createRoom = async function () {
     toast("Something failed");
   }
 };
-
 
 
 
@@ -251,13 +254,11 @@ window.createRoom = async function () {
     // ==========================
     // JOIN ROOM
     // ==========================
-    window.joinRoom = async function () {
 
-    
-    // ✅ ADD THIS FIRST
-        if (!(await isGameEnabled())) {
-            return toast("Game temporarily disabled 🚫");
-        }
+window.joinRoom = async function () {
+    if (!(await isGameEnabled())) {
+        return toast("Game temporarily disabled 🚫");
+    }
 
     playerName = document.getElementById("playerName").value.trim();
     const inputRoom = document.getElementById("roomCode").value.trim().toUpperCase();
@@ -274,25 +275,26 @@ window.createRoom = async function () {
     }
 
     const data = snap.data();
-    
-    // ✅ STEP 2 FIX (VERY IMPORTANT)
+
+    // ✅ load room language
     if (data.language) {
         currentLanguage = data.language;
         localStorage.setItem("language", currentLanguage);
 
-        await loadWords();   // ✅ load correct words
+        await loadWords();
         updateLanguageBadge();
     }
 
+    // ✅ keep duplicate protection
     const exists = data.players.some(
         p => p.name.toLowerCase() === playerName.toLowerCase()
     );
 
-
     if (exists) {
-        return toast("Name already taken ❌"); // ✅ STOP here
+        return toast("Name already taken ❌");
     }
 
+    // ✅ normal join
     await updateDoc(roomRef, {
         players: arrayUnion({
             name: playerName,
@@ -300,11 +302,19 @@ window.createRoom = async function () {
             score: 0
         })
     });
+
     localStorage.setItem("roomId", roomId);
     localStorage.setItem("playerName", playerName);
+
     setupRoomListener();
     showLobby();
-    };
+};
+
+
+
+
+
+
 
 
 const themeBtn = document.getElementById("themeBtn");
@@ -858,45 +868,119 @@ function setupRoomListener() {
             modeJoinBtn.classList.add("active");
         }
     }
+
+
+
+
+    async function tryRestoreSession() {
+    const savedRoomId = localStorage.getItem("roomId");
+    const savedPlayerName = localStorage.getItem("playerName");
+
+    if (!savedRoomId || !savedPlayerName) return false;
+
+    try {
+        const roomRef = doc(db, "rooms", savedRoomId);
+        const snap = await getDoc(roomRef);
+
+        if (!snap.exists()) {
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("playerName");
+            return false;
+        }
+
+        const data = snap.data();
+
+        const stillExists = data.players.some(
+            p => p.name.toLowerCase() === savedPlayerName.toLowerCase()
+        );
+
+        if (!stillExists) {
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("playerName");
+            return false;
+        }
+
+        // ✅ restore player session
+        roomId = savedRoomId;
+        playerName = savedPlayerName;
+        isHost = data.host === playerName;
+
+        if (data.language) {
+            currentLanguage = data.language;
+            localStorage.setItem("language", currentLanguage);
+            await loadWords();
+            updateLanguageBadge();
+        }
+
+        setupRoomListener();
+
+        // ✅ restore correct screen based on phase
+        if (data.phase === "lobby") {
+            showLobby();
+        } else if (data.phase === "playing" && data.timeStarted === null) {
+            passShown = false;
+            showPassScreen();
+        } else if (data.phase === "discussion") {
+            showDiscussion();
+        } else if (data.phase === "voting") {
+            showVoting();
+        } else if (data.phase === "results") {
+            resultsShown = false;
+            showResults();
+        }
+
+        return true;
+
+    } catch (err) {
+        console.error("❌ restore session failed:", err);
+        return false;
+    }
+}
+
     // ==========================
     // START APP
     // ==========================
     async function startApp() {
-        const savedLang = localStorage.getItem("language");
-        if (savedLang) currentLanguage = savedLang;
-        updateLanguageBadge();
+    const savedLang = localStorage.getItem("language");
+    if (savedLang) currentLanguage = savedLang;
+    updateLanguageBadge();
 
-        const createBtn = document.getElementById("createRoomBtn");
-        if (createBtn) {
-            createBtn.addEventListener("click", () => {
-                console.log("Create clicked ✅");
-                createRoom();
-            });
-        }
-
-        const joinBtn = document.getElementById("joinRoomBtn");
-        if (joinBtn) {
-            joinBtn.addEventListener("click", () => {
-                console.log("Join clicked ✅");
-                joinRoom();
-            });
-        }
-
-        const modeCreateBtn = document.getElementById("modeCreateBtn");
-        const modeJoinBtn = document.getElementById("modeJoinBtn");
-
-        if (modeCreateBtn && modeJoinBtn) {
-            modeCreateBtn.addEventListener("click", () => setStartMode("create"));
-            modeJoinBtn.addEventListener("click", () => setStartMode("join"));
-        }
-
-        showScreen("start");
-        setStartMode("create");
-
-        loadWords();
-
-        if (quickJoinCheck()) return;
+    const createBtn = document.getElementById("createRoomBtn");
+    if (createBtn) {
+        createBtn.addEventListener("click", () => {
+            console.log("Create clicked ✅");
+            createRoom();
+        });
     }
+
+    const joinBtn = document.getElementById("joinRoomBtn");
+    if (joinBtn) {
+        joinBtn.addEventListener("click", () => {
+            console.log("Join clicked ✅");
+            joinRoom();
+        });
+    }
+
+    const modeCreateBtn = document.getElementById("modeCreateBtn");
+    const modeJoinBtn = document.getElementById("modeJoinBtn");
+
+    if (modeCreateBtn && modeJoinBtn) {
+        modeCreateBtn.addEventListener("click", () => setStartMode("create"));
+        modeJoinBtn.addEventListener("click", () => setStartMode("join"));
+    }
+
+    showScreen("start");
+    setStartMode("create");
+
+    await loadWords();
+
+    // ✅ restore previous session if page was refreshed
+    const restored = await tryRestoreSession();
+    if (restored) return;
+
+    // ✅ check shared room link after restore attempt
+    if (quickJoinCheck()) return;
+}
 
 // ✅ IMPORTANT
 window.addEventListener("DOMContentLoaded", () => {

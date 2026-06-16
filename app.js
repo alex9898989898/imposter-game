@@ -31,6 +31,7 @@
     let currentLanguage = "english";
     let resultsTriggered = false;
     let nextRoundStarted = false;
+   let lastPhase = null;
     function clearGameTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -145,12 +146,22 @@ window.createRoom = async function () {
     const roomRef = doc(db, "rooms", roomId);
 
     await setDoc(roomRef, {
-      host: playerName,
-      phase: "lobby",
-      language: currentLanguage, // ✅ ADD THIS
-      players: [
+    host: playerName,
+    phase: "lobby",
+    started: false,
+    language: currentLanguage,
+
+    nextRoundReady: [],
+    readyForDiscussion: [],
+    revealedPlayers: [],
+    votes: {},
+
+    voteStarted: null,
+    timeStarted: null,
+
+    players: [
         { name: playerName, ready: false, score: 0 }
-      ]
+    ]
     });
 
     console.log("✅ Firebase write success");
@@ -402,6 +413,9 @@ function setupRoomListener() {
 
         roomData = data;
         
+        const previousPhase = lastPhase;
+        lastPhase = roomData.phase
+
         let loadingLanguage = false;
 
         if (
@@ -538,8 +552,7 @@ function setupRoomListener() {
         } else if (roomData.phase === "voting") {
             updateVotingUI(); // ✅ NEW FUNCTION
         }
-
-        if (roomData.phase === "lobby") {
+        if (roomData.phase === "lobby" && previousPhase && previousPhase !== "lobby") {
             console.log("🔄 FULL RESET (LOBBY)");
 
             // ✅ reset ALL flags
@@ -549,12 +562,15 @@ function setupRoomListener() {
             resultsShown = false;
             resultsTriggered = false;
             nextRoundStarted = false;
+
             // ✅ reset timers
             clearGameTimer();
             timeLeft = 0;
 
-            // ✅ ALWAYS show lobby cleanly
-            showLobby();
+            // ✅ do not force leave room-created screen
+            if (!screens.created.classList.contains("active")) {
+                showLobby();
+            }
         }
 
 

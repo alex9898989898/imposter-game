@@ -719,9 +719,11 @@ function setupRoomListener() {
         if (!isHost) {
         document.getElementById("langMenu").style.display = "none";
         }
-        if (previousHost !== isHost) {
+        
+        if (previousHost !== isHost && roomData.phase === "lobby") {
             showLobby();
         }
+
         
         
         if (roomData.phase === "lobby") {
@@ -812,40 +814,62 @@ function setupRoomListener() {
     
     
         // ✅ NEXT ROUND SYNC SYSTEM
+if (roomData.phase === "results") {
+    const ready = roomData.nextRoundReady || [];
+    const total = roomData.players.length;
 
-        if (roomData.phase === "results") {
+    const btn = document.getElementById("nextRoundBtn");
+    if (btn) {
+        btn.innerText = `Next Round (${ready.length}/${total})`;
 
-            const ready = roomData.nextRoundReady || [];
-            const total = roomData.players.length;
-
-            const btn = document.getElementById("nextRoundBtn");
-            if (btn) {
-                btn.innerText = `Next Round (${ready.length}/${total})`;
-
-                if (ready.includes(playerName)) {
-                    btn.disabled = true;
-                    btn.style.opacity = "0.6";
-                } else {
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                }
-            }
-
-            console.log("NEXT ROUND READY:", ready.length, "/", total);
-
-            if (
-                isHost &&
-                ready.length === total &&
-                total > 0 &&
-                !nextRoundStarted
-            ) {
-                nextRoundStarted = true;
-
-                console.log("🚀 STARTING NEXT ROUND (ONCE)");
-
-                nextRound();
-            }
+        if (ready.includes(playerName)) {
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = "1";
         }
+    }
+
+    console.log("NEXT ROUND READY:", ready.length, "/", total);
+
+    // ✅ if too few players remain, stop and go back to lobby
+    if (total < 3 && isHost && !nextRoundStarted) {
+        nextRoundStarted = true;
+
+        await updateDoc(doc(db, "rooms", roomId), {
+            phase: "lobby",
+            started: false,
+            nextRoundReady: [],
+            readyForDiscussion: [],
+            revealedPlayers: [],
+            votes: {},
+            voteStarted: null,
+            timeStarted: null,
+            players: roomData.players.map(p => ({
+                ...p,
+                ready: false
+            }))
+        });
+
+        toast("Need at least 3 players for next round");
+        return;
+    }
+
+    // ✅ start next round immediately when all remaining players are ready
+    if (
+        isHost &&
+        ready.length === total &&
+        total >= 3 &&
+        !nextRoundStarted
+    ) {
+        nextRoundStarted = true;
+
+        console.log("🚀 STARTING NEXT ROUND IMMEDIATELY");
+
+        nextRound();
+    }
+}
 
 
 
@@ -997,36 +1021,43 @@ function setupRoomListener() {
     // ==========================
     // LEAVE ROOM
     // ==========================
+async function leaveRoom() {
+    const roomRef = doc(db, "rooms", roomId);
 
-    async function leaveRoom() {
+    const updatedPlayers = roomData.players.filter(
+        p => p.name !== playerName
+    );
 
-        const roomRef = doc(db, "rooms", roomId);
+    const update = {
+        players: updatedPlayers,
 
-        const updatedPlayers =
-            roomData.players.filter(
-                p => p.name !== playerName
-            );
+        // ✅ remove from sync arrays too
+        nextRoundReady: (roomData.nextRoundReady || []).filter(name => name !== playerName),
+        readyForDiscussion: (roomData.readyForDiscussion || []).filter(name => name !== playerName),
+        revealedPlayers: (roomData.revealedPlayers || []).filter(name => name !== playerName)
+    };
 
-        const update = {
-            players: updatedPlayers
-        };
+    // ✅ clean votes
+    const cleanedVotes = { ...(roomData.votes || {}) };
+    delete cleanedVotes[playerName];
+    update.votes = cleanedVotes;
 
-        if (
-            roomData.host === playerName &&
-            updatedPlayers.length > 0
-        ) {
-            update.host = updatedPlayers[0].name;
-        }
-
-        await updateDoc(roomRef, update);
-
-        sessionStorage.removeItem("roomId");
-        sessionStorage.removeItem("playerName");
-        stopPresenceHeartbeat();
-
-
-        location.reload();
+    // ✅ if host leaves, transfer host to next player
+    if (roomData.host === playerName && updatedPlayers.length > 0) {
+        update.host = updatedPlayers[0].name;
     }
+
+    await updateDoc(roomRef, update);
+
+    sessionStorage.removeItem("roomId");
+    sessionStorage.removeItem("playerName");
+    stopPresenceHeartbeat();
+
+    location.reload();
+}
+
+
+
     function setStartMode(mode) {
         startMode = mode;
 
@@ -1698,6 +1729,25 @@ window.addEventListener("DOMContentLoaded", () => {
     // SHOW RESULTS
     // ==========================
     function showResults() {
+
+        const oldLeaveBtn = document.getElementById("leaveResultsBtn");
+
+if (oldLeaveBtn) {
+    const newLeaveBtn = oldLeaveBtn.cloneNode(true);
+    oldLeaveBtn.parentNode.replaceChild(newLeaveBtn, oldLeaveBtn);
+
+    newLeaveBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            await leaveRoom();
+        } catch (err) {
+            console.error("❌ leave from results failed:", err);
+            toast("Failed to leave");
+        }
+    };
+}
         document.body.classList.remove("win", "lose");
         showScreen("results");
 
@@ -1885,11 +1935,86 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
 async function nextRound() {
     const roomRef = doc(db, "rooms", roomId);
-    
-    console.log("RESET COMPLETE:", {
-    readyForDiscussion: [],
-    revealedPlayers: []
-    });
+
+    console.log("🔄 NEXT ROUND CLICKED");
+
+    try {
+        const totalPlayers = roomData.players.length;
+
+        // ✅ if not enough players, return to lobby
+        if (totalPlayers < 3) {
+            await updateDoc(roomRef, {
+                phase: "lobby",
+                started: false,
+                nextRoundReady: [],
+                readyForDiscussion: [],
+                revealedPlayers: [],
+                votes: {},
+                voteStarted: null,
+                timeStarted: null,
+                players: roomData.players.map(p => ({
+                    ...p,
+                    ready: false
+                }))
+            });
+
+            passShown = false;
+            discussionStarted = false;
+            votingStarted = false;
+            timeLeft = 0;
+            clearGameTimer();
+
+            console.log("⚠️ Not enough players, back to lobby");
+            return;
+        }
+
+        // ✅ make sure words are loaded
+        if (!words.length) {
+            await loadWords();
+        }
+
+        if (!words.length) {
+            toast("No words loaded ❌");
+            nextRoundStarted = false;
+            return;
+        }
+
+        // ✅ pick new word + new impostor
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        const randomPlayer =
+            roomData.players[Math.floor(Math.random() * roomData.players.length)];
+
+        await updateDoc(roomRef, {
+            phase: "playing",
+            started: true,
+            word: randomWord,
+            impostor: randomPlayer.name,
+
+            // ✅ reset round fields
+            nextRoundReady: [],
+            readyForDiscussion: [],
+            revealedPlayers: [],
+            votes: {},
+            voteStarted: null,
+            timeStarted: null
+        });
+
+        // ✅ local reset
+        passShown = false;
+        discussionStarted = false;
+        votingStarted = false;
+        resultsShown = false;
+        resultsTriggered = false;
+        timeLeft = 0;
+        clearGameTimer();
+
+        console.log("✅ NEXT ROUND STARTED IMMEDIATELY");
+
+    } catch (err) {
+        console.error("❌ nextRound error:", err);
+        nextRoundStarted = false;
+    }
+}
 
 
     console.log("🔄 NEXT ROUND CLICKED");

@@ -1346,42 +1346,44 @@ window.addEventListener("DOMContentLoaded", () => {
      
 
 
-const oldBtn = document.getElementById("nextRoundBtn");
+    const oldBtn = document.getElementById("nextRoundBtn");
 
-// ✅ replace button fully
-const newBtn = oldBtn.cloneNode(true);
+    // ✅ replace button fully
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn); // ✅ IMPORTANT: replace old button in DOM
 
-newBtn.type = "button"; // ✅ ADD THIS
+    newBtn.type = "button";
 
-// ✅ HARD RESET the button every round
-newBtn.disabled = false;
-newBtn.style.pointerEvents = "auto";
-newBtn.style.zIndex = "9999";
-newBtn.style.position = "relative";
-newBtn.style.opacity = "1";
+    // ✅ HARD RESET the button every round
+    newBtn.disabled = false;
+    newBtn.style.pointerEvents = "auto";
+    newBtn.style.zIndex = "9999";
+    newBtn.style.position = "relative";
+    newBtn.style.opacity = "1";
 
-// ✅ update button text
-function updateNextBtn() {
-    const ready = roomData?.nextRoundReady || [];
-    const total = roomData?.players?.length || 0;
+    // ✅ update button text
+    function updateNextBtn() {
+        const ready = roomData?.nextRoundReady || [];
+        const total = roomData?.players?.length || 0;
 
-    newBtn.innerText = `Next Round (${ready.length}/${total})`;
+        newBtn.innerText = `Next Round (${ready.length}/${total})`;
 
-    // disable if this player already clicked
-    if (ready.includes(playerName)) {
-        newBtn.disabled = true;
-        newBtn.style.opacity = "0.6";
-    } else {
-        newBtn.disabled = false;
-        newBtn.style.opacity = "1";
+        if (ready.includes(playerName)) {
+            newBtn.disabled = true;
+            newBtn.style.opacity = "0.6";
+        } else {
+            newBtn.disabled = false;
+            newBtn.style.opacity = "1";
+        }
     }
-}
 
-    // ✅ call immediately
     updateNextBtn();
 
     // ✅ attach click safely
-    newBtn.addEventListener("click", async () => {
+    newBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         console.log("🟢 NEXT ROUND BUTTON CLICKED:", playerName);
 
         if (newBtn.disabled) return;
@@ -1395,7 +1397,6 @@ function updateNextBtn() {
             });
 
             console.log("✅ Ready for next round saved:", playerName);
-
         } catch (err) {
             console.error("❌ next round click failed:", err);
 
@@ -1404,11 +1405,7 @@ function updateNextBtn() {
 
             toast("Failed to go next round");
         }
-    });
-
-
-    }
-
+    };
 
 
 

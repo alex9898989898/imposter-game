@@ -229,6 +229,16 @@ window.createRoom = async function () {
     }
 
     const data = snap.data();
+    
+    // ✅ STEP 2 FIX (VERY IMPORTANT)
+    if (data.language) {
+        currentLanguage = data.language;
+        localStorage.setItem("language", currentLanguage);
+
+        await loadWords();   // ✅ load correct words
+        updateLanguageBadge();
+    }
+
     const exists = data.players.some(
         p => p.name.toLowerCase() === playerName.toLowerCase()
     );
@@ -398,11 +408,21 @@ function setupRoomListener() {
 
         roomData = data;
         
-        // ✅ BLOCK noisy updates during results
-        if (roomData.language && roomData.language !== currentLanguage) {
-        currentLanguage = roomData.language;
-        loadWords();
-        updateLanguageBadge();
+        let loadingLanguage = false;
+
+        if (
+            roomData.language &&
+            roomData.language !== currentLanguage &&
+            !loadingLanguage
+        ) {
+            loadingLanguage = true;
+            currentLanguage = roomData.language;
+
+            loadWords().then(() => {
+                loadingLanguage = false;
+            });
+
+            updateLanguageBadge();
         }
         // ✅ UPDATE WAITING UI LIVE
         if (roomData.phase === "playing" && roomData.timeStarted === null) {
@@ -572,7 +592,10 @@ function setupRoomListener() {
     function updateLobbyUI() {
         if (!roomData) return;
 
-        document.getElementById("roomTitle").innerText = roomId;
+                
+        document.getElementById("roomTitle").innerText =
+            `${roomId} (${currentLanguage.toUpperCase()})`;
+
 
         // ✅ READY COUNT HERE
         const readyCount = roomData.players.filter(p => p.ready).length;
@@ -817,9 +840,15 @@ window.addEventListener("DOMContentLoaded", () => {
             return toast("Need at least 3 ready players");
         }
 
+
         if (!words.length) {
-            return toast("No words loaded");
+            await loadWords(); // ✅ force load
         }
+
+        if (!words.length) {
+            return toast("No words loaded ❌");
+        }
+
         const randomWord =
             words[Math.floor(Math.random() * words.length)];
 
@@ -1385,17 +1414,20 @@ window.setLanguage = async function (lang) {
     return toast("Only host can change language ❌");
   }
 
-  
-    currentLanguage = lang;
+  // ✅ NEW: block mid-game changes
+  if (roomData.phase !== "lobby") {
+    return toast("Can't change language during game ❌");
+  }
 
-    await updateDoc(doc(db, "rooms", roomId), {
+  currentLanguage = lang;
+
+  await updateDoc(doc(db, "rooms", roomId), {
     language: lang
-    });
-
+  });
 
   localStorage.setItem("language", lang);
 
-  loadWords();
+  await loadWords(); // ✅ IMPORTANT
 
   document.getElementById("langMenu").style.display = "none";
 
@@ -1403,6 +1435,7 @@ window.setLanguage = async function (lang) {
 
   toast("Language: " + lang);
 };
+
 
 
 function updateLanguageBadge() {

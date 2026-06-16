@@ -1140,13 +1140,34 @@ window.addEventListener("DOMContentLoaded", () => {
             }, 500); // ✅ 0.5 sec delay
         }
 
+        document.body.classList.remove("role-impostor", "role-innocent");
+
+        if (myRole === "IMPOSTOR") {
+            document.body.classList.add("role-impostor");
+        } else {
+            document.body.classList.add("role-innocent");
+        }
+
 
         const el = document.getElementById("roleContent");
 
         if (myRole === "IMPOSTOR") {
-            el.innerHTML = "🕵️ YOU ARE THE IMPOSTOR";
+            el.innerHTML = `
+                <div class="role-box impostor-role reveal-pop">
+                    <div class="role-icon">🕵️</div>
+                    <div class="role-title">YOU ARE THE IMPOSTOR</div>
+                    <div class="role-subtitle">Blend in and avoid detection.</div>
+                </div>
+            `;
         } else {
-            el.innerHTML = "🧠 WORD: " + gameWord;
+            el.innerHTML = `
+                <div class="role-box innocent-role reveal-pop">
+                    <div class="role-icon">🧠</div>
+                    <div class="role-title">SECRET WORD</div>
+                    <div class="role-word">${gameWord}</div>
+                    <div class="role-subtitle">Talk naturally and find the impostor.</div>
+                </div>
+            `;
         }
     }
 
@@ -1691,13 +1712,17 @@ async function nextRound() {
         revealBtn.onclick = () => {
             revealMyRole();
 
-            continueBtn.disabled = false;
-            continueBtn.innerText = "Continue";
+            continueBtn.disabled = true;
+            continueBtn.innerText = "Read carefully...";
 
-            // ✅ GREEN
-            continueBtn.classList.remove("btn-warning");
-            continueBtn.classList.add("btn-success");
+            setTimeout(() => {
+                continueBtn.disabled = false;
+                continueBtn.innerText = "Continue";
+                continueBtn.classList.remove("btn-warning");
+                continueBtn.classList.add("btn-success");
+            }, 1200);
         };
+
 
         // ✅ AFTER CONTINUE → TURN YELLOW + WAITING
         continueBtn.onclick = async () => {

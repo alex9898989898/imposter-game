@@ -34,6 +34,17 @@
     let lastPhase = null;
     let justCreatedRoom = false;
     let startMode = "create";
+    let presenceInterval = null;
+    let playerSessionId =
+        sessionStorage.getItem("playerSessionId") ||
+        (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+
+    sessionStorage.setItem("playerSessionId", playerSessionId);
+
+    let cleanupRunning = false;
+
+
+
     function clearGameTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -139,6 +150,50 @@
     }
 
 
+
+    function stopPresenceHeartbeat() {
+    if (presenceInterval) {
+        clearInterval(presenceInterval);
+        presenceInterval = null;
+    }
+}
+
+async function touchPresence() {
+    if (!roomId || !playerName || !roomData?.players) return;
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    const found = roomData.players.some(p => p.sessionId === playerSessionId);
+    if (!found) return;
+
+    const updatedPlayers = roomData.players.map(p => {
+        if (p.sessionId === playerSessionId) {
+            return {
+                ...p,
+                lastSeen: Date.now()
+            };
+        }
+        return p;
+    });
+
+    await updateDoc(roomRef, {
+        players: updatedPlayers
+    });
+}
+
+function startPresenceHeartbeat() {
+    stopPresenceHeartbeat();
+
+    // touch immediately once
+    touchPresence().catch(err => console.error("❌ touchPresence error:", err));
+
+    // then keep updating
+    presenceInterval = setInterval(() => {
+        touchPresence().catch(err => console.error("❌ heartbeat error:", err));
+    }, 5000);
+}
+
+
     // ==========================
     // CREATE ROOM
     // ==========================
@@ -182,9 +237,16 @@ window.createRoom = async function () {
       voteStarted: null,
       timeStarted: null,
 
-      players: [
-        { name: playerName, ready: false, score: 0 }
-      ]
+ players: [
+  {
+    name: playerName,
+    ready: false,
+    score: 0,
+    sessionId: playerSessionId,
+    lastSeen: Date.now()
+  }
+]
+
     });
 
     // ✅ SAVE SESSION AFTER FIREBASE SUCCESS
@@ -196,6 +258,7 @@ window.createRoom = async function () {
     console.log("✅ Firebase write success");
     setupRoomListener();
     showCreatedRoom();
+    startPresenceHeartbeat();
 
   } catch (err) {
     console.error("❌ ERROR:", err);
@@ -297,13 +360,18 @@ window.joinRoom = async function () {
     }
 
     // ✅ normal join
-    await updateDoc(roomRef, {
-        players: arrayUnion({
-            name: playerName,
-            ready: false,
-            score: 0
-        })
-    });
+
+        // ✅ normal join
+        await updateDoc(roomRef, {
+            players: arrayUnion({
+                name: playerName,
+                ready: false,
+                score: 0,
+                sessionId: playerSessionId,
+                lastSeen: Date.now()
+            })
+        });
+
 
 
 sessionStorage.setItem("roomId", roomId);
@@ -312,6 +380,7 @@ sessionStorage.setItem("playerName", playerName);
 
     setupRoomListener();
     showLobby();
+    startPresenceHeartbeat();
 };
 
 
@@ -415,11 +484,15 @@ themeBtn.addEventListener("click", () => {
         }
 
         await updateDoc(roomRef, {
-            players: arrayUnion({
-                name: playerName,
-                ready: false,
-                score: 0
-            })
+
+        players: arrayUnion({
+            name: playerName,
+            ready: false,
+            score: 0,
+            sessionId: playerSessionId,
+            lastSeen: Date.now()
+        })
+
         });
 
 
@@ -429,6 +502,8 @@ themeBtn.addEventListener("click", () => {
 
         setupRoomListener();
         showLobby();
+        startPresenceHeartbeat();
+
         };
 
         return true;
@@ -437,6 +512,50 @@ themeBtn.addEventListener("click", () => {
     return false;
     }
 
+
+
+    async function cleanupStalePlayers() {
+    if (!roomData || roomData.phase !== "lobby" || cleanupRunning) return;
+
+    cleanupRunning = true;
+
+    try {
+        const now = Date.now();
+        const timeoutMs = 15000; // 15 seconds without heartbeat => remove
+
+        const players = roomData.players || [];
+
+        const alivePlayers = players.filter(p => {
+            // if old player object doesn't yet have lastSeen, keep it for compatibility
+            if (!p.lastSeen) return true;
+            return now - p.lastSeen < timeoutMs;
+        });
+
+        if (alivePlayers.length === players.length) {
+            cleanupRunning = false;
+            return;
+        }
+
+        const roomRef = doc(db, "rooms", roomId);
+        const update = {
+            players: alivePlayers
+        };
+
+        // if host was stale and removed, give host to first alive player
+        if (!alivePlayers.some(p => p.name === roomData.host) && alivePlayers.length > 0) {
+            update.host = alivePlayers[0].name;
+        }
+
+        console.log("🧹 Removing stale players:", players.length - alivePlayers.length);
+
+        await updateDoc(roomRef, update);
+
+    } catch (err) {
+        console.error("❌ cleanupStalePlayers error:", err);
+    } finally {
+        cleanupRunning = false;
+    }
+}
 
 function setupRoomListener() {
 
@@ -449,10 +568,9 @@ function setupRoomListener() {
     unsubscribeRoom = onSnapshot(roomRef, (snap) => {
 
         if (!snap.exists()) {
-            
             sessionStorage.removeItem("roomId");
             sessionStorage.removeItem("playerName");
-
+            stopPresenceHeartbeat();
 
             toast("Room closed");
             location.reload();
@@ -541,13 +659,15 @@ function setupRoomListener() {
         const stillInRoom = roomData.players.some(p => p.name === playerName);
         if (!stillInRoom) {
             toast("You were removed ❌");
-            
+
             sessionStorage.removeItem("roomId");
             sessionStorage.removeItem("playerName");
+            stopPresenceHeartbeat();
 
             setTimeout(() => location.reload(), 1000);
             return;
         }
+
         // ✅ HOST CHECK
         const previousHost = isHost;
         isHost = roomData.host === playerName;
@@ -557,6 +677,12 @@ function setupRoomListener() {
         if (previousHost !== isHost) {
             showLobby();
         }
+        
+        
+        if (roomData.phase === "lobby") {
+            cleanupStalePlayers();
+        }
+
         updateLanguageControl();
         updateLobbyUI();
                 // ✅ PASS SCREEN
@@ -851,6 +977,7 @@ function setupRoomListener() {
 
         sessionStorage.removeItem("roomId");
         sessionStorage.removeItem("playerName");
+        stopPresenceHeartbeat();
 
 
         location.reload();
@@ -931,6 +1058,7 @@ function setupRoomListener() {
         }
 
         setupRoomListener();
+        startPresenceHeartbeat();
 
         // ✅ restore correct screen based on phase
         if (data.phase === "lobby") {
@@ -1824,3 +1952,7 @@ document.addEventListener("click", (e) => {
 function isDiscussionStarted() {
   return roomData.timeStarted !== null;
 }
+
+window.addEventListener("pagehide", () => {
+    stopPresenceHeartbeat();
+});

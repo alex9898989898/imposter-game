@@ -121,15 +121,20 @@ function showScreen(name) {
     // ==========================
     // TOAST
     // ==========================
+
     function toast(msg) {
         const el = document.getElementById("toast");
         el.innerText = msg;
-        el.style.display = "block";
-        
+        el.classList.add("show");
+
         setTimeout(() => {
+            el.classList.remove("show");
             el.style.display = "none";
         }, 2000);
+
+        el.style.display = "block";
     }
+
 
 
 

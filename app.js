@@ -610,7 +610,7 @@ function setupRoomListener() {
     }
     const roomRef = doc(db, "rooms", roomId);
     console.log("=================================");
-    unsubscribeRoom = onSnapshot(roomRef, (snap) => {
+    unsubscribeRoom = onSnapshot(roomRef, async (snap) => {
 
         if (!snap.exists()) {
             sessionStorage.removeItem("roomId");
@@ -2013,50 +2013,6 @@ async function nextRound() {
     } catch (err) {
         console.error("❌ nextRound error:", err);
         nextRoundStarted = false;
-    }
-}
-
-
-    console.log("🔄 NEXT ROUND CLICKED");
-
-    try {
-            await updateDoc(roomRef, {
-                phase: "lobby",
-                started: false,
-                language: roomData.language, // ✅ keep language stable
-                nextRoundReady: [], // ✅ RESET HERE
-
-                // ✅ reset game fields
-                votes: {},
-                impostor: null,
-                word: null,
-
-                // ✅ IMPORTANT RESETS
-                readyForDiscussion: [],
-                revealedPlayers: [],
-                
-                
-                timeStarted: null,
-                voteStarted: null,
-                
-
-                players: roomData.players.map(p => ({
-                    ...p,
-                    ready: false
-                }))
-            });
-
-        // ✅ LOCAL RESET (VERY IMPORTANT)
-        passShown = false;
-        discussionStarted = false;
-        votingStarted = false;
-        timeLeft = 0;
-        clearGameTimer();
-
-        console.log("✅ NEXT ROUND RESET DONE");
-
-    } catch (err) {
-        console.error("❌ nextRound error:", err);
     }
 }
 

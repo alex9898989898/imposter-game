@@ -1304,7 +1304,6 @@ window.addEventListener("DOMContentLoaded", () => {
     // ==========================
     // SHOW RESULTS
     // ==========================
-  
     function showResults() {
         document.body.classList.remove("win", "lose");
         showScreen("results");
@@ -1315,62 +1314,123 @@ window.addEventListener("DOMContentLoaded", () => {
 
         let winners = [];
 
-        // ✅ find players who guessed the impostor
+        // ✅ Players who guessed the impostor correctly
         Object.keys(votes).forEach(player => {
             if (votes[player] === impostor) {
                 winners.push(player);
             }
         });
 
-        // ✅ winner found
+        const guessedCorrectly = winners.includes(playerName);
+        const iAmImpostor = playerName === impostor;
+
+        // ==========================
+        // CASE 1: Impostor was found
+        // ==========================
         if (winners.length > 0) {
-            document.body.classList.add("win");
-            launchConfetti();
 
-            content.innerHTML = `
-                <div class="results-animate">
-                    <h2 class="result-title bounce-in">🎯 Impostor Found!</h2>
+            if (guessedCorrectly) {
+                // ✅ This player wins
+                document.body.classList.add("win");
+                launchConfetti();
 
-                    <div class="impostor-box slide-up red-glow">
-                        <span>🕵️ Impostor</span>
-                        <strong>${impostor}</strong>
-                    </div>
+                content.innerHTML = `
+                    <div class="results-animate">
+                        <h2 class="result-title bounce-in">🎉 You Win!</h2>
 
-                    <div class="winner-box slide-up green-glow delay-1">
-                        <span>✅ Winners</span>
-                        <div class="winner-list">
-                            ${winners.map(name => `<span class="badge pop-in">${name}</span>`).join("")}
+                        <div class="impostor-box slide-up red-glow">
+                            <span>🕵️ Impostor</span>
+                            <strong>${impostor}</strong>
+                        </div>
+
+                        <div class="winner-box slide-up green-glow delay-1">
+                            <span>✅ Correct Guessers</span>
+                            <div class="winner-list">
+                                ${winners.map(name => `<span class="badge pop-in">${name}</span>`).join("")}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        } 
-        // ✅ impostor wins
-        else {
-            document.body.classList.add("lose");
+                `;
+            } else {
+                // ❌ This player loses
+                document.body.classList.add("lose");
 
-            content.innerHTML = `
-                <div class="results-animate">
-                    <h2 class="result-title bounce-in">🕵️ Impostor Wins!</h2>
+                content.innerHTML = `
+                    <div class="results-animate">
+                        <h2 class="result-title bounce-in">❌ You Lose!</h2>
 
-                    <div class="impostor-box slide-up red-glow">
-                        <span>🕵️ Impostor</span>
-                        <strong>${impostor}</strong>
-                    </div>
+                        <div class="impostor-box slide-up red-glow">
+                            <span>🕵️ Impostor</span>
+                            <strong>${impostor}</strong>
+                        </div>
 
-                    <div class="winner-box slide-up dark-glow delay-1">
-                        <span>👑 Winner</span>
-                        <div class="winner-list">
-                            <span class="badge impostor pop-in">${impostor}</span>
+                        <div class="winner-box slide-up green-glow delay-1">
+                            <span>✅ Correct Guessers</span>
+                            <div class="winner-list">
+                                ${winners.map(name => `<span class="badge pop-in">${name}</span>`).join("")}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         }
 
+        // ==========================
+        // CASE 2: Impostor wins
+        // ==========================
+        else {
+
+            if (iAmImpostor) {
+                // ✅ Impostor wins
+                document.body.classList.add("win");
+                launchConfetti();
+
+                content.innerHTML = `
+                    <div class="results-animate">
+                        <h2 class="result-title bounce-in">🕵️ You Win!</h2>
+
+                        <div class="impostor-box slide-up red-glow">
+                            <span>🕵️ Impostor</span>
+                            <strong>${impostor}</strong>
+                        </div>
+
+                        <div class="winner-box slide-up dark-glow delay-1">
+                            <span>👑 Winner</span>
+                            <div class="winner-list">
+                                <span class="badge impostor pop-in">${impostor}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // ❌ Innocent player loses
+                document.body.classList.add("lose");
+
+                content.innerHTML = `
+                    <div class="results-animate">
+                        <h2 class="result-title bounce-in">💀 You Lose!</h2>
+
+                        <div class="impostor-box slide-up red-glow">
+                            <span>🕵️ Impostor</span>
+                            <strong>${impostor}</strong>
+                        </div>
+
+                        <div class="winner-box slide-up dark-glow delay-1">
+                            <span>👑 Winner</span>
+                            <div class="winner-list">
+                                <span class="badge impostor pop-in">${impostor}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ==========================
+        // NEXT ROUND BUTTON
+        // ==========================
         const oldBtn = document.getElementById("nextRoundBtn");
 
-        // ✅ replace button fully
         const newBtn = oldBtn.cloneNode(true);
         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
@@ -1381,7 +1441,6 @@ window.addEventListener("DOMContentLoaded", () => {
         newBtn.style.position = "relative";
         newBtn.style.opacity = "1";
 
-        // ✅ update button text
         function updateNextBtn() {
             const ready = roomData?.nextRoundReady || [];
             const total = roomData?.players?.length || 0;
@@ -1399,7 +1458,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
         updateNextBtn();
 
-        // ✅ click handler
         newBtn.onclick = async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1427,8 +1485,7 @@ window.addEventListener("DOMContentLoaded", () => {
             }
         };
     }
-
-
+   
 
     // ==========================
     // NEXT ROUND

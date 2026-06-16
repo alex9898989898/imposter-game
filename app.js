@@ -582,21 +582,34 @@ function setupRoomListener() {
             }
         }
         // ✅ NEXT ROUND SYNC SYSTEM
+
         if (roomData.phase === "results") {
 
             const ready = roomData.nextRoundReady || [];
             const total = roomData.players.length;
 
+            const btn = document.getElementById("nextRoundBtn");
+            if (btn) {
+                btn.innerText = `Next Round (${ready.length}/${total})`;
+
+                if (ready.includes(playerName)) {
+                    btn.disabled = true;
+                    btn.style.opacity = "0.6";
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
+            }
+
             console.log("NEXT ROUND READY:", ready.length, "/", total);
 
-            // ✅ ONLY HOST starts next round
             if (
                 isHost &&
                 ready.length === total &&
                 total > 0 &&
-                !nextRoundStarted // ✅ ADD LOCK
+                !nextRoundStarted
             ) {
-                nextRoundStarted = true; // ✅ LOCK IT
+                nextRoundStarted = true;
 
                 console.log("🚀 STARTING NEXT ROUND (ONCE)");
 
@@ -1302,48 +1315,84 @@ window.addEventListener("DOMContentLoaded", () => {
 
         } else {
 
-        content.innerHTML = `
-            <h2 class="result-title">🕵️ Impostor Wins!</h2>
+            content.innerHTML = `
+                <h2 class="result-title">🕵️ Impostor Wins!</h2>
 
-            <div class="impostor-box">
-            <span>🕵️ Impostor</span>
-            <strong>${impostor}</strong>
-            </div>
+                <div class="impostor-box">
+                <span>🕵️ Impostor</span>
+                <strong>${impostor}</strong>
+                </div>
 
-            <div class="winner-box">
-            <span>👑 Winner</span>
-            <div class="winner-list">
-                <span class="badge impostor">${impostor}</span>
-            </div>
-            </div>
+                <div class="winner-box">
+                <span>👑 Winner</span>
+                <div class="winner-list">
+                    <span class="badge impostor">${impostor}</span>
+                </div>
+                </div>
         `;
         }
 
-        const oldBtn = document.getElementById("nextRoundBtn");
+     
 
-        // ✅ replace button
-        const newBtn = oldBtn.cloneNode(true);
-        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-        // ✅ update text LIVE based on DB
-        function updateNextBtn() {
-            const ready = roomData?.nextRoundReady || [];
-            newBtn.innerText = `Next Round (${ready.length}/${roomData.players.length})`;
-        }
+const oldBtn = document.getElementById("nextRoundBtn");
 
-        // ✅ call immediately
-        updateNextBtn();     
+// ✅ replace button fully
+const newBtn = oldBtn.cloneNode(true);
+oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-        newBtn.onclick = async () => {
-            console.log("✅ Ready for next round");
+// ✅ HARD RESET the button every round
+newBtn.disabled = false;
+newBtn.style.pointerEvents = "auto";
+newBtn.style.zIndex = "9999";
+newBtn.style.position = "relative";
+newBtn.style.opacity = "1";
 
+// ✅ update button text
+function updateNextBtn() {
+    const ready = roomData?.nextRoundReady || [];
+    const total = roomData?.players?.length || 0;
+
+    newBtn.innerText = `Next Round (${ready.length}/${total})`;
+
+    // disable if this player already clicked
+    if (ready.includes(playerName)) {
+        newBtn.disabled = true;
+        newBtn.style.opacity = "0.6";
+    } else {
+        newBtn.disabled = false;
+        newBtn.style.opacity = "1";
+    }
+}
+
+    // ✅ call immediately
+    updateNextBtn();
+
+    // ✅ attach click safely
+    newBtn.addEventListener("click", async () => {
+        console.log("🟢 NEXT ROUND BUTTON CLICKED:", playerName);
+
+        if (newBtn.disabled) return;
+
+        try {
             newBtn.disabled = true;
+            newBtn.style.opacity = "0.6";
 
             await updateDoc(doc(db, "rooms", roomId), {
                 nextRoundReady: arrayUnion(playerName)
             });
-        };
 
+            console.log("✅ Ready for next round saved:", playerName);
+
+        } catch (err) {
+            console.error("❌ next round click failed:", err);
+
+            newBtn.disabled = false;
+            newBtn.style.opacity = "1";
+
+            toast("Failed to go next round");
+        }
+    });
 
 
     }

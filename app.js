@@ -2052,19 +2052,16 @@ async function nextRound() {
         continueBtn.classList.add("btn-warning");
 
         // ✅ AFTER REVEAL → TURN GREEN
+
         revealBtn.onclick = () => {
             revealMyRole();
 
-            continueBtn.disabled = true;
-            continueBtn.innerText = "Read carefully...";
-
-            setTimeout(() => {
-                continueBtn.disabled = false;
-                continueBtn.innerText = "Continue";
-                continueBtn.classList.remove("btn-warning");
-                continueBtn.classList.add("btn-success");
-            }, 1200);
+            continueBtn.disabled = false;
+            continueBtn.innerText = "Continue";
+            continueBtn.classList.remove("btn-warning");
+            continueBtn.classList.add("btn-success");
         };
+
 
 
         // ✅ AFTER CONTINUE → TURN YELLOW + WAITING

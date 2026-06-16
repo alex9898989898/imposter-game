@@ -31,7 +31,8 @@
     let currentLanguage = "english";
     let resultsTriggered = false;
     let nextRoundStarted = false;
-   let lastPhase = null;
+    let lastPhase = null;
+    let justCreatedRoom = false;
     function clearGameTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -139,6 +140,7 @@ window.createRoom = async function () {
 
     roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
     isHost = true;
+    justCreatedRoom = true; // ✅ keep only this one
 
     console.log("Room ID:", roomId);
     console.log("Player:", playerName);
@@ -175,6 +177,16 @@ window.createRoom = async function () {
 };
 
 
+
+
+
+
+
+
+
+
+
+
     // ==========================
     // SHOW CREATED ROOM SCREEN
     // ==========================
@@ -199,6 +211,7 @@ window.createRoom = async function () {
     };
 
     document.getElementById("goLobbyBtn").onclick = () => {
+        justCreatedRoom = false; // ✅ ADD THIS
         showLobby();
     };
 
@@ -414,7 +427,7 @@ function setupRoomListener() {
         roomData = data;
         
         const previousPhase = lastPhase;
-        lastPhase = roomData.phase
+        lastPhase = roomData.phase;
 
         let loadingLanguage = false;
 
@@ -452,10 +465,34 @@ function setupRoomListener() {
         if (roomData.phase !== "discussion") {
             discussionStarted = false;
         }    
+
         if (roomData.phase === "lobby") {
             passShown = false;
             discussionStarted = false;
+
+            if (justCreatedRoom && screens.created.classList.contains("active")) {
+                console.log("🛑 Keeping created room screen visible");
+            } else if (previousPhase && previousPhase !== "lobby") {
+                console.log("🔄 FULL RESET (LOBBY)");
+
+                votingStarted = false;
+                resultsShown = false;
+                resultsTriggered = false;
+                nextRoundStarted = false;
+
+                clearGameTimer();
+                timeLeft = 0;
+
+                if (!screens.lobby.classList.contains("active")) {
+                    showLobby();
+                }
+            } else {
+                console.log("📍 Already in lobby state");
+            }
         }
+
+
+
         console.log("🧠 PHASE:", roomData.phase);
         console.log("🧠 timeStarted:", roomData.timeStarted);
         console.log("🧠 readyForDiscussion:", roomData.readyForDiscussion);
@@ -552,27 +589,6 @@ function setupRoomListener() {
         } else if (roomData.phase === "voting") {
             updateVotingUI(); // ✅ NEW FUNCTION
         }
-        if (roomData.phase === "lobby" && previousPhase && previousPhase !== "lobby") {
-            console.log("🔄 FULL RESET (LOBBY)");
-
-            // ✅ reset ALL flags
-            passShown = false;
-            discussionStarted = false;
-            votingStarted = false;
-            resultsShown = false;
-            resultsTriggered = false;
-            nextRoundStarted = false;
-
-            // ✅ reset timers
-            clearGameTimer();
-            timeLeft = 0;
-
-            // ✅ do not force leave room-created screen
-            if (!screens.created.classList.contains("active")) {
-                showLobby();
-            }
-        }
-
 
         // ✅ RESULTS
         if (roomData.phase === "results") {
@@ -617,36 +633,31 @@ function setupRoomListener() {
             }
         }
 
-        // ✅ SAFETY SCREEN FIX
-        if (roomData.phase === "lobby") {
-            if (!screens.lobby.classList.contains("active")) {
-                showLobby();
-            }
-        }
-
 
 
     });
 }
 
+
+
     // ==========================
     // SHOW LOBBY
     // ==========================
     function showLobby() {
-    showScreen("lobby");
+        justCreatedRoom = false;
+        showScreen("lobby");
 
-    if (isHost) {
-        document.getElementById("startGameBtn").style.display = "block";
-    } else {
-        document.getElementById("startGameBtn").style.display = "none";
+        if (isHost) {
+            document.getElementById("startGameBtn").style.display = "block";
+        } else {
+            document.getElementById("startGameBtn").style.display = "none";
+        }
+
+        document.getElementById("startGameBtn").onclick = startGame;
+        document.getElementById("readyBtn").onclick = toggleReady;
+        document.getElementById("leaveBtn").onclick = leaveRoom;
     }
 
-    document.getElementById("startGameBtn").onclick = startGame;
-
-    document.getElementById("readyBtn").onclick = toggleReady;
-
-    document.getElementById("leaveBtn").onclick = leaveRoom;
-    }
 
 
     // ==========================
@@ -1339,7 +1350,8 @@ const oldBtn = document.getElementById("nextRoundBtn");
 
 // ✅ replace button fully
 const newBtn = oldBtn.cloneNode(true);
-oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+newBtn.type = "button"; // ✅ ADD THIS
 
 // ✅ HARD RESET the button every round
 newBtn.disabled = false;

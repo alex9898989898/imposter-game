@@ -279,42 +279,77 @@ window.createRoom = async function () {
     // ==========================
     // SHOW CREATED ROOM SCREEN
     // ==========================
-    function showCreatedRoom() {
+function showCreatedRoom() {
     showScreen("created");
 
     const link = `${window.location.origin}?room=${roomId}`;
 
     document.getElementById("shareLinkInput").value = link;
 
+    const qrWrap = document.getElementById("qrWrap");
+    const qr = document.getElementById("qrCode");
+    qr.innerHTML = "";
+    qrWrap.style.display = "none";
+
+    // generate QR once
+    new QRCode(qr, {
+        text: link,
+        width: 120,
+        height: 120
+    });
+
+    // Copy Link
     document.getElementById("copyLinkBtn").onclick = async () => {
         await navigator.clipboard.writeText(link);
         toast("Copied!");
     };
 
-    document.getElementById("shareBtn").onclick = async () => {
+    // Invite (share if available, else copy)
+    document.getElementById("inviteBtn").onclick = async () => {
         if (navigator.share) {
-        navigator.share({ url: link });
+            try {
+                await navigator.share({
+                    title: "Join my Imposter room",
+                    text: `Join my room: ${roomId}`,
+                    url: link
+                });
+            } catch (err) {
+                console.log("Invite cancelled");
+            }
         } else {
-        toast("Sharing not supported");
+            await navigator.clipboard.writeText(link);
+            toast("Invite link copied!");
         }
     };
 
-    document.getElementById("goLobbyBtn").onclick = () => {
-        justCreatedRoom = false; // ✅ ADD THIS
-        showLobby();
+    // Share
+    document.getElementById("shareBtn").onclick = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: "Join my Imposter room",
+                    url: link
+                });
+            } catch (err) {
+                console.log("Share cancelled");
+            }
+        } else {
+            await navigator.clipboard.writeText(link);
+            toast("Sharing not supported — link copied!");
+        }
     };
 
-    const qr = document.getElementById("qrCode");
-    qr.innerHTML = "";
-    
-    new QRCode(qr, {
-        text: link,
-        width: 120,   // 🔽 change size here
-        height: 120   // 🔽 change size here
-    });
+    // QR toggle
+    document.getElementById("qrToggleBtn").onclick = () => {
+        qrWrap.style.display = qrWrap.style.display === "none" ? "block" : "none";
+    };
 
-    }
-
+    // Go to lobby
+    document.getElementById("goLobbyBtn").onclick = () => {
+        justCreatedRoom = false;
+        showLobby();
+    };
+}
 
     // ==========================
     // JOIN ROOM

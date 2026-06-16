@@ -153,52 +153,48 @@
     </section>
 
     <!-- Room Created -->
-    <section id="roomCreatedScreen" class="screen">
+   <section id="roomCreatedScreen" class="screen">
+  <div class="card created-card">
+    <h2>✅ Room Created</h2>
 
-      <div class="card">
+    <p>Share this link:</p>
 
-        <h2>✅ Room Created</h2>
+    <input
+      id="shareLinkInput"
+      class="input"
+      readonly
+    />
 
-        <p>
-          Share this link:
-        </p>
+    <div class="action-grid">
+      <button id="copyLinkBtn" class="action-btn action-coral">
+        🔗 Copy Link
+      </button>
 
-        <input
-          id="shareLinkInput"
-          class="input"
-          readonly
-        />
+      <button id="inviteBtn" class="action-btn action-cyan">
+        👥 Invite
+      </button>
 
-        <div class="button-row">
+      <button id="qrToggleBtn" class="action-btn action-dark">
+        ▦ QR Code
+      </button>
 
-          <button
-            id="copyLinkBtn"
-            class="btn btn-primary"
-          >
-            📋 Copy
-          </button>
+      <button id="shareBtn" class="action-btn action-dark">
+        ↗ Share
+      </button>
+    </div>
 
-          <button
-            id="shareBtn"
-            class="btn btn-success"
-          >
-            📲 Share
-          </button>
+    <div id="qrWrap" style="display:none;">
+      <div id="qrCode"></div>
+    </div>
 
-        </div>
-
-        <div id="qrCode"></div>
-
-        <button
-          id="goLobbyBtn"
-          class="btn btn-warning full"
-        >
-          🎮 Go To Lobby
-        </button>
-
-      </div>
-
-    </section>
+    <button
+      id="goLobbyBtn"
+      class="btn btn-warning full"
+    >
+      🎮 Go To Lobby
+    </button>
+  </div>
+</section>
 
     <!-- Lobby -->
     <section id="lobbyScreen" class="screen">

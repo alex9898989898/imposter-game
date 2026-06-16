@@ -630,6 +630,22 @@ function setupRoomListener() {
         
         const previousPhase = lastPhase;
         lastPhase = roomData.phase;
+        // ✅ reset local state when going directly from results -> playing
+if (previousPhase === "results" && roomData.phase === "playing") {
+    console.log("🔄 RESET AFTER RESULTS -> PLAYING");
+
+    passShown = false;
+    discussionStarted = false;
+    votingStarted = false;
+    resultsShown = false;
+    resultsTriggered = false;
+    nextRoundStarted = false;
+
+    timeLeft = 0;
+    clearGameTimer();
+
+    document.body.classList.remove("win", "lose");
+}
 
         let loadingLanguage = false;
 
@@ -2005,8 +2021,10 @@ async function nextRound() {
         votingStarted = false;
         resultsShown = false;
         resultsTriggered = false;
+        nextRoundStarted = false;
         timeLeft = 0;
         clearGameTimer();
+
 
         console.log("✅ NEXT ROUND STARTED IMMEDIATELY");
 

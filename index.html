@@ -229,21 +229,28 @@
 
         </div>
 
-      <div class="button-row">
-        <button
-          id="nextRoundBtn"
-          class="btn btn-primary"
-        >
-          Next Round
-        </button>
+<div class="button-row">
+  <button
+    id="readyBtn"
+    class="btn btn-success"
+  >
+    ✅ Ready
+  </button>
 
-        <button
-          id="leaveResultsBtn"
-          class="btn btn-danger"
-        >
-          🚪 Leave
-        </button>
-      </div>
+  <button
+    id="leaveBtn"
+    class="btn btn-danger"
+  >
+    🚪 Leave
+  </button>
+</div>
+
+<button
+  id="startGameBtn"
+  class="btn btn-primary full"
+>
+  ▶ Start Game
+</button>
 
         <button
           id="startGameBtn"
@@ -345,7 +352,6 @@
 
     <!-- Results -->
     <section id="resultsScreen" class="screen">
-
       <div class="card">
 
         <h2>
@@ -354,15 +360,23 @@
 
         <div id="resultsContent" class="results-box"></div>
 
-        <button
-          id="nextRoundBtn"
-          class="btn btn-primary"
-        >
-          Next Round
-        </button>
+        <div class="button-row">
+          <button
+            id="nextRoundBtn"
+            class="btn btn-primary"
+          >
+            Next Round
+          </button>
+
+          <button
+            id="leaveResultsBtn"
+            class="btn btn-danger"
+          >
+            🚪 Leave
+          </button>
+        </div>
 
       </div>
-
     </section>
 
     <!-- Scoreboard -->

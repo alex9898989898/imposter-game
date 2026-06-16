@@ -70,6 +70,26 @@
     scoreboard: document.getElementById("scoreboardScreen")
     };
 
+
+    function launchConfetti() {
+    for (let i = 0; i < 30; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti-piece";
+
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.animationDuration = (2 + Math.random() * 2) + "s";
+        piece.style.background =
+            ["#22c55e", "#3b82f6", "#facc15", "#ef4444", "#a855f7"][
+                Math.floor(Math.random() * 5)
+            ];
+
+        document.body.appendChild(piece);
+
+        setTimeout(() => piece.remove(), 4000);
+    }
+}
+
+
     function showScreen(name) {
         Object.values(screens).forEach(s => {
             s.classList.remove("active");
@@ -1291,127 +1311,122 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const votes = roomData.votes || {};
         const content = document.getElementById("resultsContent");
-
         const impostor = roomData.impostor;
 
         let winners = [];
 
-        // ✅ find players who guessed impostor
+        // ✅ find players who guessed the impostor
         Object.keys(votes).forEach(player => {
             if (votes[player] === impostor) {
                 winners.push(player);
             }
         });
 
-        // ✅ create badges (NEW ✨)
-        const winnerHTML = winners.map(name =>
-            `<span class="badge">${name}</span>`
-        ).join("");
-     
+        // ✅ winner found
         if (winners.length > 0) {
-
-        content.innerHTML = `
-            <h2 class="result-title">🎯 Impostor Found!</h2>
-
-            <div class="impostor-box">
-            <span>🕵️ Impostor</span>
-            <strong>${impostor}</strong>
-            </div>
-
-            <div class="winner-box">
-            <span>✅ Winners</span>
-            <div class="winner-list">
-                ${winners.map(name => `<span class="badge">${name}</span>`).join("")}
-            </div>
-            </div>
-        `;
-
-        } else {
+            document.body.classList.add("win");
+            launchConfetti();
 
             content.innerHTML = `
-                <h2 class="result-title">🕵️ Impostor Wins!</h2>
+                <div class="results-animate">
+                    <h2 class="result-title bounce-in">🎯 Impostor Found!</h2>
 
-                <div class="impostor-box">
-                <span>🕵️ Impostor</span>
-                <strong>${impostor}</strong>
-                </div>
+                    <div class="impostor-box slide-up red-glow">
+                        <span>🕵️ Impostor</span>
+                        <strong>${impostor}</strong>
+                    </div>
 
-                <div class="winner-box">
-                <span>👑 Winner</span>
-                <div class="winner-list">
-                    <span class="badge impostor">${impostor}</span>
+                    <div class="winner-box slide-up green-glow delay-1">
+                        <span>✅ Winners</span>
+                        <div class="winner-list">
+                            ${winners.map(name => `<span class="badge pop-in">${name}</span>`).join("")}
+                        </div>
+                    </div>
                 </div>
+            `;
+        } 
+        // ✅ impostor wins
+        else {
+            document.body.classList.add("lose");
+
+            content.innerHTML = `
+                <div class="results-animate">
+                    <h2 class="result-title bounce-in">🕵️ Impostor Wins!</h2>
+
+                    <div class="impostor-box slide-up red-glow">
+                        <span>🕵️ Impostor</span>
+                        <strong>${impostor}</strong>
+                    </div>
+
+                    <div class="winner-box slide-up dark-glow delay-1">
+                        <span>👑 Winner</span>
+                        <div class="winner-list">
+                            <span class="badge impostor pop-in">${impostor}</span>
+                        </div>
+                    </div>
                 </div>
-        `;
+            `;
         }
 
-     
+        const oldBtn = document.getElementById("nextRoundBtn");
 
+        // ✅ replace button fully
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-    const oldBtn = document.getElementById("nextRoundBtn");
+        newBtn.type = "button";
+        newBtn.disabled = false;
+        newBtn.style.pointerEvents = "auto";
+        newBtn.style.zIndex = "9999";
+        newBtn.style.position = "relative";
+        newBtn.style.opacity = "1";
 
-    // ✅ replace button fully
-    const newBtn = oldBtn.cloneNode(true);
-    oldBtn.parentNode.replaceChild(newBtn, oldBtn); // ✅ IMPORTANT: replace old button in DOM
+        // ✅ update button text
+        function updateNextBtn() {
+            const ready = roomData?.nextRoundReady || [];
+            const total = roomData?.players?.length || 0;
 
-    newBtn.type = "button";
+            newBtn.innerText = `Next Round (${ready.length}/${total})`;
 
-    // ✅ HARD RESET the button every round
-    newBtn.disabled = false;
-    newBtn.style.pointerEvents = "auto";
-    newBtn.style.zIndex = "9999";
-    newBtn.style.position = "relative";
-    newBtn.style.opacity = "1";
-
-    // ✅ update button text
-    function updateNextBtn() {
-        const ready = roomData?.nextRoundReady || [];
-        const total = roomData?.players?.length || 0;
-
-        newBtn.innerText = `Next Round (${ready.length}/${total})`;
-
-        if (ready.includes(playerName)) {
-            newBtn.disabled = true;
-            newBtn.style.opacity = "0.6";
-        } else {
-            newBtn.disabled = false;
-            newBtn.style.opacity = "1";
+            if (ready.includes(playerName)) {
+                newBtn.disabled = true;
+                newBtn.style.opacity = "0.6";
+            } else {
+                newBtn.disabled = false;
+                newBtn.style.opacity = "1";
+            }
         }
+
+        updateNextBtn();
+
+        // ✅ click handler
+        newBtn.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log("🟢 NEXT ROUND BUTTON CLICKED:", playerName);
+
+            if (newBtn.disabled) return;
+
+            try {
+                newBtn.disabled = true;
+                newBtn.style.opacity = "0.6";
+
+                await updateDoc(doc(db, "rooms", roomId), {
+                    nextRoundReady: arrayUnion(playerName)
+                });
+
+                console.log("✅ Ready for next round saved:", playerName);
+            } catch (err) {
+                console.error("❌ next round click failed:", err);
+
+                newBtn.disabled = false;
+                newBtn.style.opacity = "1";
+
+                toast("Failed to go next round");
+            }
+        };
     }
-
-    updateNextBtn();
-
-    // ✅ attach click safely
-    newBtn.onclick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        console.log("🟢 NEXT ROUND BUTTON CLICKED:", playerName);
-
-        if (newBtn.disabled) return;
-
-        try {
-            newBtn.disabled = true;
-            newBtn.style.opacity = "0.6";
-
-            await updateDoc(doc(db, "rooms", roomId), {
-                nextRoundReady: arrayUnion(playerName)
-            });
-
-            console.log("✅ Ready for next round saved:", playerName);
-        } catch (err) {
-            console.error("❌ next round click failed:", err);
-
-            newBtn.disabled = false;
-            newBtn.style.opacity = "1";
-
-            toast("Failed to go next round");
-        }
-    };
-
-
-}
-
 
 
 

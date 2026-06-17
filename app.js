@@ -802,10 +802,8 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         }
         // ✅ discussion
 
-        if (roomData.phase === "discussion") {
+        if (roomData.phase === "discussion" && roomData.timeStarted) {
             if (!screens.discussion.classList.contains("active")) {
-                console.log("📺 FORCE SHOW DISCUSSION");
-                discussionStarted = true;
                 showDiscussion();
             }
         }
@@ -972,10 +970,6 @@ function updateLobbyUI() {
     document.getElementById("roomTitle").innerText =
         `${roomId} (${currentLanguage.toUpperCase()})`;
         updateDiscussionTimeButtons();
-    const discussionTimeSelect = document.getElementById("discussionTimeSelect");
-    if (discussionTimeSelect && roomData?.discussionTime) {
-        discussionTimeSelect.value = String(roomData.discussionTime);
-    }
 
     const readyCount = roomData.players.filter(p => p.ready).length;
 
@@ -1541,59 +1535,66 @@ async function startDiscussion() {
     // ==========================
     // DISCUSSION SCREEN + TIMER
     // ==========================
-    function showDiscussion() {
+function showDiscussion() {
 
-        discussionStarted = true;
-        showScreen("discussion");
+    discussionStarted = true;
+    showScreen("discussion");
 
-        const skipBtn = document.getElementById("skipDiscussionBtn");
+    const skipBtn = document.getElementById("skipDiscussionBtn");
 
-        // ✅ SHOW ONLY FOR HOST
-        if (isHost) {
-            skipBtn.style.display = "block";
-        } else {
-            skipBtn.style.display = "none";
-        }
-
-        // ✅ 👇 ADD IT RIGHT HERE
-        skipBtn.onclick = async () => {
-            console.log("⏭ HOST SKIPPED DISCUSSION");
-
-            clearGameTimer();
-
-            await startVoting(); // ✅ jump directly to voting
-        };
-
-        timeLeft = roomData.discussionTime || 120;
-        updateTimer();
-
-        clearGameTimer();
-
-        timerInterval = setInterval(() => {
-
-            const started = roomData?.timeStarted;
-            if (typeof started !== "number") return;
-
-            const now = Date.now();
-            const elapsed = Math.floor((now - started) / 1000);
-
-            const duration = roomData.discussionTime || 120;
-
-            timeLeft = Math.max(duration - elapsed, 0);
-
-            updateTimer();
-
-            if (timeLeft <= 0) {
-                clearGameTimer();
-
-                if (isHost && roomData.phase === "discussion") {
-                    startVoting();
-                }
-            }
-
-        }, 1000);
+    // ✅ host control
+    if (isHost) {
+        skipBtn.style.display = "block";
+    } else {
+        skipBtn.style.display = "none";
     }
 
+    skipBtn.onclick = async () => {
+        console.log("⏭ HOST SKIPPED DISCUSSION");
+        clearGameTimer();
+        await startVoting();
+    };
+
+    clearGameTimer();
+
+    // ✅ ✅ FIX: calculate time IMMEDIATELY (important)
+    function calculateTimeLeft() {
+        const started = roomData?.timeStarted;
+        const duration = roomData?.discussionTime || 120;
+
+        if (!started) return duration;
+
+        const elapsed = Math.floor((Date.now() - started) / 1000);
+        return Math.max(duration - elapsed, 0);
+    }
+
+    // ✅ instant update (FIXES RELOAD BUG)
+    timeLeft = calculateTimeLeft();
+    updateTimer();
+
+    // ✅ interval
+    timerInterval = setInterval(() => {
+
+        const started = roomData?.timeStarted;
+        if (!started) return;
+
+        const duration = roomData.discussionTime || 120;
+        const elapsed = Math.floor((Date.now() - started) / 1000);
+
+        timeLeft = Math.max(duration - elapsed, 0);
+
+        updateTimer();
+
+        if (timeLeft <= 0) {
+            clearGameTimer();
+
+            if (isHost && roomData.phase === "discussion") {
+                startVoting();
+            }
+        }
+
+    }, 1000);
+}
 
 
     // ==========================

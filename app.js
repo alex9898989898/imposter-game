@@ -900,8 +900,6 @@ async function updateDiscussionTime(value) {
     await updateDoc(roomRef, {
         discussionTime: Number(value)
     });
-
-    toast(`Discussion time: ${value}s`);
 }
 function updateDiscussionTimeButtons() {
     const timeButtons = document.querySelectorAll(".time-btn");
@@ -2173,7 +2171,6 @@ window.setLanguage = async function (lang) {
 
   updateLanguageBadge();
 
-  toast("Language: " + lang);
 };
 
 

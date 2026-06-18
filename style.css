@@ -6,6 +6,11 @@
   --card: rgba(255,255,255,0.06);
   --text: #ffffff;
   --input: rgba(255,255,255,0.1);
+  
+  /* ✅ ADD THESE */
+  --header-height: 60px;
+  --footer-height: 80px;
+
 }
 
 body.light {
@@ -210,8 +215,8 @@ body.light .input::placeholder {
 
 .screen {
   position: absolute;
-  top: var(--header-height);
-  bottom: var(--footer-height);
+  top: var(--header-height, 60px);
+  bottom: var(--footer-height, 80px);
   left: 0;
   right: 0;
 
@@ -219,7 +224,6 @@ body.light .input::placeholder {
   pointer-events: none;
 
   flex-direction: column;
-
   justify-content: center;
   align-items: center;
 

@@ -1643,3 +1643,27 @@ body.light .time-btn.active {
     font-size: 16px;
   }
 }
+/* Make generated QR always fully visible */
+#qrWrap {
+  width: 100%;
+  overflow: visible;
+}
+
+#qrCode {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+#qrCode canvas,
+#qrCode img {
+  width: min(220px, 80vw) !important;
+  height: min(220px, 80vw) !important;
+  max-width: 100%;
+  display: block;
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+}

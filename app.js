@@ -1352,15 +1352,25 @@ async function openQrScanner() {
           height: 250
         }
       },
-      async (decodedText) => {
+        async (decodedText) => {
         const roomCode = extractRoomCodeFromQr(decodedText);
+
+        console.log("✅ QR decoded:", decodedText);
+        console.log("✅ Room code:", roomCode);
 
         roomInput.value = roomCode;
 
         await closeQrScanner();
 
-        toast("QR scanned ✅");
-      },
+        if (!document.getElementById("playerName").value.trim()) {
+            toast("Enter your name first");
+            return;
+        }
+
+        toast("Joining room...");
+
+        await window.joinRoom();
+        },
       () => {
         // ignore scanning misses
       }

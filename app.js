@@ -312,8 +312,8 @@ function showCreatedRoom() {
     
 new QRCode(qr, {
   text: link,
-  width: 180,
-  height: 180
+  width: 160,
+  height: 160
 });
 
 

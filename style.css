@@ -1539,3 +1539,107 @@ body.light .time-btn.active {
   background: rgba(255,255,255,0.2);
   border-radius: 10px;
 }
+
+
+
+
+/* =========================
+   QR SCANNER MODAL
+========================= */
+
+.qr-scanner-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+
+  display: none;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+}
+
+.qr-scanner-modal.show {
+  display: flex;
+}
+
+.qr-scanner-card {
+  width: 100%;
+  max-width: 420px;
+
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 18px;
+  padding: 20px;
+
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+}
+
+#qrReader {
+  width: 100%;
+  margin: 16px 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+#scanQrBtn {
+  margin-top: 8px;
+  background: #f59e0b;
+  color: #111;
+  border-radius: 14px;
+  font-weight: 800;
+}
+/* =========================
+   START SCREEN COMPACT FIX
+========================= */
+
+#startScreen .start-card {
+  overflow-y: auto;
+}
+
+/* Make start card fit better when Join mode is open */
+@media (max-height: 820px) {
+  #startScreen .start-card {
+    padding: 18px;
+  }
+
+  .start-title {
+    font-size: 34px;
+    margin-bottom: 4px;
+  }
+
+  .start-subtitle {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .start-languages {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .input {
+    padding: 10px 12px;
+    margin: 7px 0;
+  }
+
+  .mode-switch {
+    margin: 10px 0;
+    padding: 5px;
+  }
+
+  .mode-btn {
+    padding: 10px 12px;
+  }
+
+  #scanQrBtn,
+  #createRoomBtn,
+  #joinRoomBtn {
+    margin-top: 8px;
+    padding: 12px;
+    font-size: 16px;
+  }
+}

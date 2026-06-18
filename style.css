@@ -1478,3 +1478,11 @@ body.light .time-btn.active {
   background: rgba(255,255,255,0.2);
   border-radius: 10px;
 }
+
+.screen {
+  display: none;
+}
+
+.screen:first-of-type {
+  display: flex; /* ✅ fallback */
+}

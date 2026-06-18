@@ -160,10 +160,8 @@ body.light .input::placeholder {
    SCREEN SYSTEM
 ========================= */
 
-
 .screen {
   display: none;
-
   position: absolute;
   top: 0;
   bottom: var(--footer-height);
@@ -175,7 +173,7 @@ body.light .input::placeholder {
   padding-right: 16px;
 
   flex-direction: column;
-  justify-content: flex-start
+  justify-content: flex-start;
   align-items: center;
 
   overflow-y: auto;
@@ -191,9 +189,10 @@ body.light .input::placeholder {
 }
 
 .screen:not(.active) {
-  pointer-events: none; /* ✅ THIS FIXES EVERYTHING */
+  pointer-events: none;
   z-index: 0;
 }
+
 
 #nextRoundBtn {
   position: relative;
@@ -285,6 +284,7 @@ body {
   position: relative;
   width: 100%;
   max-width: 420px;
+  margin: 0 auto;
 
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.12);
@@ -295,13 +295,13 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   transition: 0.3s;
 
-  /* ✅ ✅ FIX */
-  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 20px);
+  max-height: calc(100dvh - var(--header-height) - var(--footer-height) - 20px);
 
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 
 body.light .card {
   border: 1px solid rgba(0,0,0,0.08);

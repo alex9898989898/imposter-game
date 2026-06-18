@@ -1647,6 +1647,7 @@ body.light .time-btn.active {
 #qrWrap {
   width: 100%;
   overflow: visible;
+  margin: 18px 0;
 }
 
 #qrCode {
@@ -1659,11 +1660,12 @@ body.light .time-btn.active {
 
 #qrCode canvas,
 #qrCode img {
-  width: min(220px, 80vw) !important;
-  height: min(220px, 80vw) !important;
-  max-width: 100%;
+  width: 180px !important;
+  height: 180px !important;
+  max-width: 70vw;
+  max-height: 70vw;
   display: block;
   background: white;
-  padding: 8px;
+  padding: 6px;
   border-radius: 8px;
 }

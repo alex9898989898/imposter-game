@@ -309,11 +309,13 @@ function showCreatedRoom() {
 
     // generate QR once
     
-    new QRCode(qr, {
-        text: link,
-        width: 220,
-        height: 220
-    });
+    
+new QRCode(qr, {
+  text: link,
+  width: 180,
+  height: 180
+});
+
 
 
     // Copy Link

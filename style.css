@@ -214,6 +214,22 @@ body.light .input::placeholder {
 
 .screen {
   display: none;
+
+  position: absolute;
+  top: 0;
+  bottom: var(--footer-height);
+  left: 0;
+  right: 0;
+
+  padding-top: calc(var(--header-height) + 20px);
+  padding-left: 16px;
+  padding-right: 16px;
+
+  flex-direction: column;
+  justify-content: center;   /* ✅ center vertical */
+  align-items: center;
+
+  overflow-y: auto;
 }
 
 
@@ -255,6 +271,17 @@ body.light .result-row {
 body.light .result-row strong {
   color: #111;
 }
+
+
+.card {
+  margin: 0 auto;
+}
+
+
+body {
+  overflow-x: hidden;
+}
+
 
 .card {
   position: relative;

@@ -213,14 +213,19 @@ body.light .input::placeholder {
 }
 .screen {
   position: absolute;
-  top: 0;                 /* ✅ change this */
+  top: 0;
   bottom: var(--footer-height);
   left: 0;
   right: 0;
 
-  padding-top: calc(var(--header-height) + 20px); /* ✅ FIX */
-}
+  padding-top: calc(var(--header-height) + 20px);
 
+  display: flex;
+  flex-direction: column;
+
+  justify-content: flex-start;   /* ✅ FIX */
+  align-items: center;
+}
 
 /* When content is too tall → shift toward top */
 @media (max-height: 700px) {

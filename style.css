@@ -173,9 +173,9 @@ body.light .input::placeholder {
 
 .screen.scrollable {
   justify-content: flex-start;
-  align-items: flex-start;
-  padding-top: calc(var(--header-height) + 20px);
+  align-items: center;   /* ✅ FIX */
 }
+
 
 
 #nextRoundBtn {

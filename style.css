@@ -39,11 +39,6 @@ body {
 }
 
 
-#roomCreatedScreen.active {
-  align-items: flex-start;
-  padding-top: 40px;
-}
-
 
 #playersList li {
   display: flex;
@@ -174,8 +169,11 @@ body.light .input::placeholder {
 }
 
 /* ONLY for scroll-heavy screens */
+
 .screen.scrollable {
+  justify-content: flex-start;
   align-items: flex-start;
+  padding-top: 30px;
 }
 
 

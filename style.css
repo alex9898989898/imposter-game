@@ -1271,11 +1271,6 @@ body.light .action-cyan {
   padding: 12px;
 }
 
-#startScreen.active {
-  align-items: flex-start;
-  padding-top: 40px;
-}
-
 .action-btn i {
   margin-right: 8px;
 }

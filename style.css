@@ -96,15 +96,22 @@ body {
 
 
 .topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: var(--header-height);
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
+
+  padding: 0 20px; /* cleaner because height is fixed */
   background: rgba(0,0,0,0.3);
   backdrop-filter: blur(10px);
 
-  position: relative; /* ✅ CHANGE */
-  z-index: 100;       /* ✅ HIGH */
+  z-index: 1000;
 }
 
 

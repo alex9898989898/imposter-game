@@ -160,23 +160,40 @@ body.light .input::placeholder {
    SCREEN SYSTEM
 ========================= */
 
-.screen:not(.active) {
-  pointer-events: none; /* ✅ THIS FIXES EVERYTHING */
-  z-index: 0;
+
+.screen {
+  display: none;
+
+  position: absolute;
+  top: 0;
+  bottom: var(--footer-height);
+  left: 0;
+  right: 0;
+
+  padding-top: calc(var(--header-height) + 20px);
+  padding-left: 16px;
+  padding-right: 16px;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  overflow-y: auto;
 }
 
 .screen.active {
   display: flex;
 }
 
-/* ONLY for scroll-heavy screens */
-
 .screen.scrollable {
   justify-content: flex-start;
-  align-items: center;   /* ✅ FIX */
+  align-items: center;
 }
 
-
+.screen:not(.active) {
+  pointer-events: none; /* ✅ THIS FIXES EVERYTHING */
+  z-index: 0;
+}
 
 #nextRoundBtn {
   position: relative;
@@ -212,25 +229,6 @@ body.light .input::placeholder {
   letter-spacing: 0.2px;
 }
 
-.screen {
-  display: none;
-
-  position: absolute;
-  top: 0;
-  bottom: var(--footer-height);
-  left: 0;
-  right: 0;
-
-  padding-top: calc(var(--header-height) + 20px);
-  padding-left: 16px;
-  padding-right: 16px;
-
-  flex-direction: column;
-  justify-content: center;   /* ✅ center vertical */
-  align-items: center;
-
-  overflow-y: auto;
-}
 
 
 /* When content is too tall → shift toward top */

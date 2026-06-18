@@ -96,7 +96,7 @@ body {
 
 
 .topbar {
-  position: fixed;
+  position: fixed;   /* ✅ MUST be fixed */
   top: 0;
   left: 0;
   right: 0;
@@ -107,13 +107,12 @@ body {
   justify-content: space-between;
   align-items: center;
 
-  padding: 0 20px; /* cleaner because height is fixed */
+  padding: 0 20px; /* cleaner */
   background: rgba(0,0,0,0.3);
   backdrop-filter: blur(10px);
 
   z-index: 1000;
 }
-
 
 body.light .topbar {
   background: rgba(255,255,255,0.6);

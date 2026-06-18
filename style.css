@@ -211,22 +211,11 @@ body.light .input::placeholder {
   font-weight: 800;
   letter-spacing: 0.2px;
 }
+
 .screen {
-  overflow-y: auto;
-  position: absolute;
-  top: 0;
-  bottom: var(--footer-height);
-  left: 0;
-  right: 0;
-
-  padding-top: calc(var(--header-height) + 20px);
-
-  display: flex;
-  flex-direction: column;
-
-  justify-content: flex-start;   /* ✅ FIX */
-  align-items: center;
+  display: none;
 }
+
 
 /* When content is too tall → shift toward top */
 @media (max-height: 700px) {
@@ -1477,12 +1466,4 @@ body.light .time-btn.active {
 #playersList::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.2);
   border-radius: 10px;
-}
-
-.screen {
-  display: none;
-}
-
-.screen:first-of-type {
-  display: flex; /* ✅ fallback */
 }

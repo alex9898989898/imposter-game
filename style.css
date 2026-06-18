@@ -96,7 +96,7 @@ body {
 
 
 .topbar {
-  position: fixed;   /* ✅ MUST be fixed */
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -107,7 +107,8 @@ body {
   justify-content: space-between;
   align-items: center;
 
-  padding: 0 20px; /* cleaner */
+  padding: 0 20px;
+
   background: rgba(0,0,0,0.3);
   backdrop-filter: blur(10px);
 
@@ -213,8 +214,8 @@ body.light .input::placeholder {
 
 .screen {
   position: absolute;
-  top: var(--header-height, 60px);
-  bottom: var(--footer-height, 80px);
+  top: var(--header-height);
+  bottom: var(--footer-height);
   left: 0;
   right: 0;
 

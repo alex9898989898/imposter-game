@@ -47,6 +47,24 @@ body {
 }
 
 
+#playersList {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+  scroll-behavior: smooth;
+
+  /* ✅ nice fade effect */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    white 20px,
+    white calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+
 /* Background effect */
 
 .background {
@@ -150,11 +168,12 @@ body.light .input::placeholder {
 .screen.active {
   display: flex;
   justify-content: center;
-  align-items: center;
+
+  align-items: flex-start; /* ✅ THIS FIXES CUT */
+  overflow-y: auto;        /* ✅ ENABLE PAGE SCROLL */
+
+  padding: 20px 0;
   min-height: calc(100dvh - 60px);
-  pointer-events: auto;
-  z-index: 100;
-  animation: fadeIn 0.3s ease;
 }
 
 #nextRoundBtn {
@@ -245,17 +264,24 @@ body.light .result-row strong {
 
 .card {
   position: relative;
-  
   width: 100%;
   max-width: 420px;
+
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.12);
   padding: 25px;
   border-radius: 18px;
+
   backdrop-filter: blur(16px);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+
   transition: 0.3s;
 
+  /* ✅ layout fix */
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 body.light .card {
@@ -394,12 +420,16 @@ body.light .vote-btn:hover {
   padding: 10px;
   background: var(--card);
   border-radius: 10px;
-  min-height: 120px;
+
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-#playersList {
-  list-style: none;
-}
+
+
+
 
 #playersList li {
   padding: 8px;
@@ -1438,4 +1468,13 @@ body.light .time-btn.active {
   50% {
     box-shadow: 0 10px 28px rgba(59,130,246,0.45);
   }
+}
+
+#playersList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#playersList::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
 }

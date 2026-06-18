@@ -174,7 +174,7 @@ body.light .input::placeholder {
 .screen.scrollable {
   justify-content: flex-start;
   align-items: flex-start;
-  padding-top: 30px;
+  padding-top: calc(var(--header-height) + 20px);
 }
 
 
@@ -212,6 +212,7 @@ body.light .input::placeholder {
   letter-spacing: 0.2px;
 }
 .screen {
+  overflow-y: auto;
   position: absolute;
   top: 0;
   bottom: var(--footer-height);
@@ -278,11 +279,11 @@ body.light .result-row strong {
 
   backdrop-filter: blur(16px);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-
   transition: 0.3s;
 
-  /* ✅ layout fix */
-  max-height: 90vh;
+  /* ✅ ✅ FIX */
+  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 20px);
+
   display: flex;
   flex-direction: column;
   overflow: hidden;

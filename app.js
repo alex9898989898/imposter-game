@@ -34,6 +34,7 @@
     let lastPhase = null;
     let justCreatedRoom = false;
     let startMode = "create";
+    let lastCleanup = 0;
     let presenceInterval = null;
     let playerSessionId =
         sessionStorage.getItem("playerSessionId") ||
@@ -176,19 +177,22 @@ async function touchPresence() {
     const found = roomData.players.some(p => p.sessionId === playerSessionId);
     if (!found) return;
 
-    const updatedPlayers = roomData.players.map(p => {
-        if (p.sessionId === playerSessionId) {
-            return {
-                ...p,
-                lastSeen: Date.now()
-            };
-        }
-        return p;
-    });
+const updatedPlayers = roomData.players.map(p => {
+  if (p.sessionId === playerSessionId) {
+    return {
+      ...p,
+      lastSeen: Date.now()
+    };
+  }
+  return p;
+});
 
-    await updateDoc(roomRef, {
-        players: updatedPlayers
-    });
+await updateDoc(roomRef, {
+  players: updatedPlayers
+});
+
+
+
 }
 
 function startPresenceHeartbeat() {
@@ -200,7 +204,7 @@ function startPresenceHeartbeat() {
     // then keep updating
     presenceInterval = setInterval(() => {
         touchPresence().catch(err => console.error("❌ heartbeat error:", err));
-    }, 5000);
+    }, 8000);
 }
 
 
@@ -557,50 +561,61 @@ themeBtn.addEventListener("click", () => {
     return false;
     }
 
+async function cleanupStalePlayers() {
+    if (!roomData || cleanupRunning) return;
 
+    const now = Date.now();
 
-    async function cleanupStalePlayers() {
-    if (!roomData || roomData.phase !== "lobby" || cleanupRunning) return;
+    if (now - lastCleanup < 8000) return;
+    lastCleanup = now;
 
     cleanupRunning = true;
 
     try {
-        const now = Date.now();
-        const timeoutMs = 15000; // 15 seconds without heartbeat => remove
+        const timeoutMs = 30000;
 
         const players = roomData.players || [];
 
         const alivePlayers = players.filter(p => {
-            // if old player object doesn't yet have lastSeen, keep it for compatibility
             if (!p.lastSeen) return true;
+
+            if (p.sessionId === playerSessionId) return true;
+
             return now - p.lastSeen < timeoutMs;
         });
 
-        if (alivePlayers.length === players.length) {
-            cleanupRunning = false;
-            return;
-        }
+        if (alivePlayers.length === players.length) return;
 
-        const roomRef = doc(db, "rooms", roomId);
         const update = {
-            players: alivePlayers
+            players: alivePlayers,
+            readyForDiscussion: (roomData.readyForDiscussion || []).filter(name =>
+                alivePlayers.some(p => p.name === name)
+            ),
+            revealedPlayers: (roomData.revealedPlayers || []).filter(name =>
+                alivePlayers.some(p => p.name === name)
+            ),
+            nextRoundReady: (roomData.nextRoundReady || []).filter(name =>
+                alivePlayers.some(p => p.name === name)
+            )
         };
 
-        // if host was stale and removed, give host to first alive player
-        if (!alivePlayers.some(p => p.name === roomData.host) && alivePlayers.length > 0) {
+        if (
+            !alivePlayers.some(p => p.name === roomData.host) &&
+            alivePlayers.length > 0
+        ) {
             update.host = alivePlayers[0].name;
         }
 
-        console.log("🧹 Removing stale players:", players.length - alivePlayers.length);
-
-        await updateDoc(roomRef, update);
+        await updateDoc(doc(db, "rooms", roomId), update);
 
     } catch (err) {
-        console.error("❌ cleanupStalePlayers error:", err);
+        console.error("❌ cleanup error:", err);
     } finally {
-        cleanupRunning = false;
+        cleanupRunning = false; // ✅ ALWAYS released
     }
 }
+
+
 
 function setupRoomListener() {
 
@@ -739,15 +754,11 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         if (previousHost !== isHost && roomData.phase === "lobby") {
             showLobby();
         }
-
         
-        
-        if (roomData.phase === "lobby") {
-            cleanupStalePlayers();
-        }
 
         updateLanguageControl();
         updateLobbyUI();
+        cleanupStalePlayers(); // ✅ ADD T
                 // ✅ PASS SCREEN
                 // 🔍 DEBUG PASS CHECK
         console.log("CHECK PASS:", {
@@ -1034,19 +1045,17 @@ function updateLobbyUI() {
     // REMOVE A PLAYER
     // ==========================
     
-    async function removePlayer(name) {
-        if (!isHost) return;
+async function removePlayer(name) {
+    if (!isHost) return;
 
-        const roomRef = doc(db, "rooms", roomId);
+    const updatedPlayers = roomData.players.filter(p => p.name !== name);
 
-        const updatedPlayers = roomData.players.filter(p => p.name !== name);
+    await updateDoc(doc(db, "rooms", roomId), {
+        players: updatedPlayers
+    });
 
-        await updateDoc(roomRef, {
-            players: updatedPlayers
-        });
-
-        toast(`${name} removed ❌`);
-    }
+    toast(`${name} removed ❌`);
+}
 
 
     // ==========================
@@ -1088,11 +1097,9 @@ async function leaveRoom() {
 
     const update = {
         players: updatedPlayers,
-
-        // ✅ remove from sync arrays too
-        nextRoundReady: (roomData.nextRoundReady || []).filter(name => name !== playerName),
-        readyForDiscussion: (roomData.readyForDiscussion || []).filter(name => name !== playerName),
-        revealedPlayers: (roomData.revealedPlayers || []).filter(name => name !== playerName)
+        nextRoundReady: (roomData.nextRoundReady || []).filter(n => n !== playerName),
+        readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => n !== playerName),
+        revealedPlayers: (roomData.revealedPlayers || []).filter(n => n !== playerName)
     };
 
     // ✅ clean votes
@@ -1100,7 +1107,7 @@ async function leaveRoom() {
     delete cleanedVotes[playerName];
     update.votes = cleanedVotes;
 
-    // ✅ if host leaves, transfer host to next player
+    // ✅ fix host transfer
     if (roomData.host === playerName && updatedPlayers.length > 0) {
         update.host = updatedPlayers[0].name;
     }
@@ -1649,7 +1656,11 @@ function showDiscussion() {
         container.appendChild(info);
 
         // ✅ PLAYER BUTTONS (ONLY ONCE)
-        roomData.players.forEach(p => {
+        
+        const votePlayers = roomData.players || [];
+
+        votePlayers.forEach(p => {
+
             if (p.name === playerName) return;
 
             const btn = document.createElement("button");
@@ -1670,7 +1681,10 @@ function showDiscussion() {
 
     function updateVotingUI() {
         const votes = roomData.votes || {};
-        const total = roomData.players.length;
+        
+        const votePlayers = roomData.players || [];
+        const total = votePlayers.length;
+
 
         const info = document.getElementById("voteInfo");
         if (info) {
@@ -1701,7 +1715,8 @@ function showDiscussion() {
         timerInterval = setInterval(() => {
 
             const votes = roomData.votes || {};
-            const total = roomData.players.length;
+            const total = (roomData.players || []).length;
+
 
             // ✅ instant finish
             if (Object.keys(votes).length === total) {

@@ -211,24 +211,16 @@ body.light .input::placeholder {
   font-weight: 800;
   letter-spacing: 0.2px;
 }
-
 .screen {
   position: absolute;
-  top: var(--header-height);
+  top: 0;                 /* ✅ change this */
   bottom: var(--footer-height);
   left: 0;
   right: 0;
 
-  display: none;
-  pointer-events: none;
-
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  overflow-y: auto;
-  padding: 20px;
+  padding-top: calc(var(--header-height) + 20px); /* ✅ FIX */
 }
+
 
 /* When content is too tall → shift toward top */
 @media (max-height: 700px) {

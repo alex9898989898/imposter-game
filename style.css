@@ -44,19 +44,25 @@ body {
 ========================= */
 .screen {
   display: none;
-  position: fixed;
-  top: var(--header-height);
-  bottom: var(--footer-height);
+  position: absolute;
+
+  top: var(--header-height, 60px);
+  bottom: 0;
   left: 0;
   right: 0;
 
-  padding: 20px 16px;
-  flex-direction: column;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
 
-  justify-content: center;   /* ✅ middle */
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
 
   overflow-y: auto;
+}
+
+
+#startScreen {
+  bottom: var(--footer-height, 80px);
 }
 
 .screen.active {
@@ -88,12 +94,24 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   transition: 0.3s;
 
-  max-height: calc(100dvh - var(--header-height) - var(--footer-height) - 20px);
+  max-height: calc(100dvh - var(--header-height, 60px) - 24px);
 
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+#roomCreatedScreen {
+  justify-content: flex-start;
+}
+
+
+#roomCreatedScreen .created-card {
+  max-height: calc(100dvh - var(--header-height, 60px) - 32px);
+}
+
 
 #playersList li {
   display: flex;

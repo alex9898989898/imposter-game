@@ -300,12 +300,19 @@ body.light .input::placeholder {
 
 
 
-/* When content is too tall → shift toward top */
+/* Only scroll-heavy screens go top */
 @media (max-height: 700px) {
-  .screen {
+  .screen.scrollable,
+  #roomCreatedScreen {
     justify-content: flex-start;
   }
 }
+
+.screen.active:not(.scrollable):not(#roomCreatedScreen) {
+  justify-content: center;
+  align-items: center;
+}
+
 
 .background {
   pointer-events: none;

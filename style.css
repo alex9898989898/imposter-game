@@ -175,7 +175,7 @@ body.light .input::placeholder {
   padding-right: 16px;
 
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start
   align-items: center;
 
   overflow-y: auto;

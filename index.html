@@ -106,15 +106,21 @@
 
         </div>
 
-        <div id="roomCodeWrap" class="join-only" style="display:none;">
-          <input
-            id="roomCode"
-            class="input"
-            type="text"
-            maxlength="6"
-            placeholder="Room Code"
-          />
-        </div>
+        
+<div id="roomCodeWrap" class="join-only" style="display:none;">
+  <input
+    id="roomCode"
+    class="input"
+    type="text"
+    maxlength="6"
+    placeholder="Room Code"
+  />
+
+  <button type="button" id="scanQrBtn" class="btn btn-warning">
+    📷 Scan QR Code
+  </button>
+</div>
+
 
         <button type="button" id="createRoomBtn" class="btn btn-primary">
           ➕ Create Room
@@ -400,11 +406,29 @@
   <!-- Toast -->
   <div id="toast"></div>
 
-  <!-- QR Code Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <!-- Main App -->
-  <script type="module" src="app.js"></script>
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- QR Scanner Library -->
+https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.jsscript>
+
+<!-- Main App -->
+<script type="module" src="app.js"></script>
+
+
+<div id="qrScannerModal" class="qr-scanner-modal">
+  <div class="qr-scanner-card">
+    <h2>📷 Scan QR Code</h2>
+
+    <div id="qrReader"></div>
+
+    <button type="button" id="closeScannerBtn" class="btn btn-danger">
+      Close Scanner
+    </button>
+  </div>
+</div>
+
 
 
 <div id="langMenu" class="lang-menu">

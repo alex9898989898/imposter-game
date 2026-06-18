@@ -20,6 +20,7 @@
     let roomId = null;
     let playerName = null;
     let resultsShown = false;
+    let qrScanner = null;
     let roomData = null;
     let isHost = false;
     let discussionStarted = false;
@@ -36,6 +37,7 @@
     let startMode = "create";
     let lastCleanup = 0;
     let presenceInterval = null;
+    
     let playerSessionId =
         sessionStorage.getItem("playerSessionId") ||
         (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
@@ -1284,6 +1286,81 @@ async function goToMainPage() {
     }
 }
 
+function extractRoomCodeFromQr(text) {
+  try {
+    const url = new URL(text);
+    const room = url.searchParams.get("room");
+
+    if (room) {
+      return room.trim().toUpperCase().slice(0, 6);
+    }
+  } catch (err) {
+    // QR was not a full URL. Maybe it was only the room code.
+  }
+
+  return text.trim().toUpperCase().slice(0, 6);
+}
+
+async function openQrScanner() {
+  const modal = document.getElementById("qrScannerModal");
+  const roomInput = document.getElementById("roomCode");
+
+  if (!window.Html5Qrcode) {
+    toast("QR scanner not loaded");
+    return;
+  }
+
+  modal.classList.add("show");
+
+  try {
+    qrScanner = new window.Html5Qrcode("qrReader");
+
+    await qrScanner.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: {
+          width: 240,
+          height: 240
+        }
+      },
+      async (decodedText) => {
+        const roomCode = extractRoomCodeFromQr(decodedText);
+
+        roomInput.value = roomCode;
+
+        await closeQrScanner();
+
+        toast("QR scanned ✅");
+      },
+      () => {
+        // Ignore scan errors while camera is looking for QR.
+      }
+    );
+  } catch (err) {
+    console.error("QR scanner error:", err);
+    toast("Camera access failed");
+    await closeQrScanner();
+  }
+}
+
+async function closeQrScanner() {
+  const modal = document.getElementById("qrScannerModal");
+
+  try {
+    if (qrScanner) {
+      await qrScanner.stop();
+      await qrScanner.clear();
+      qrScanner = null;
+    }
+  } catch (err) {
+    console.warn("Scanner already stopped");
+  }
+
+  if (modal) {
+    modal.classList.remove("show");
+  }
+}
     // ==========================
     // START APP
     // ==========================
@@ -1310,6 +1387,16 @@ async function startApp() {
 
     const modeCreateBtn = document.getElementById("modeCreateBtn");
     const modeJoinBtn = document.getElementById("modeJoinBtn");
+    const scanQrBtn = document.getElementById("scanQrBtn");
+    const closeScannerBtn = document.getElementById("closeScannerBtn");
+
+    if (scanQrBtn) {
+    scanQrBtn.addEventListener("click", openQrScanner);
+    }
+
+    if (closeScannerBtn) {
+    closeScannerBtn.addEventListener("click", closeQrScanner);
+    }
 
     if (modeCreateBtn && modeJoinBtn) {
         modeCreateBtn.addEventListener("click", () => setStartMode("create"));

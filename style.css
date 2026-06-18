@@ -210,8 +210,8 @@ body.light .input::placeholder {
 
 .screen {
   position: absolute;
-  top: 60px;     /* header height */
-  bottom: 80px;  /* footer height */
+  top: var(--header-height);
+  bottom: var(--footer-height);
   left: 0;
   right: 0;
 
@@ -219,11 +219,20 @@ body.light .input::placeholder {
   pointer-events: none;
 
   flex-direction: column;
+
   justify-content: center;
   align-items: center;
+
+  overflow-y: auto;
+  padding: 20px;
 }
 
-
+/* When content is too tall → shift toward top */
+@media (max-height: 700px) {
+  .screen {
+    justify-content: flex-start;
+  }
+}
 
 .background {
   pointer-events: none;

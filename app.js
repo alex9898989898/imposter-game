@@ -308,11 +308,13 @@ function showCreatedRoom() {
     qrWrap.style.display = "none";
 
     // generate QR once
+    
     new QRCode(qr, {
         text: link,
-        width: 120,
-        height: 120
+        width: 220,
+        height: 220
     });
+
 
     // Copy Link
     document.getElementById("copyLinkBtn").onclick = async () => {
@@ -1306,6 +1308,7 @@ async function openQrScanner() {
   const roomInput = document.getElementById("roomCode");
 
   if (!window.Html5Qrcode) {
+    console.error("Html5Qrcode library not found");
     toast("QR scanner not loaded");
     return;
   }
@@ -1313,15 +1316,40 @@ async function openQrScanner() {
   modal.classList.add("show");
 
   try {
+    // clean old scanner if exists
+    if (qrScanner) {
+      try {
+        await qrScanner.stop();
+        await qrScanner.clear();
+      } catch (err) {
+        console.warn("Old scanner already stopped");
+      }
+      qrScanner = null;
+    }
+
     qrScanner = new window.Html5Qrcode("qrReader");
 
+    const cameras = await window.Html5Qrcode.getCameras();
+
+    if (!cameras || cameras.length === 0) {
+      toast("No camera found");
+      return;
+    }
+
+    // Prefer back camera on iPhone
+    const backCamera =
+      cameras.find(camera =>
+        camera.label.toLowerCase().includes("back") ||
+        camera.label.toLowerCase().includes("rear")
+      ) || cameras[cameras.length - 1];
+
     await qrScanner.start(
-      { facingMode: "environment" },
+      backCamera.id,
       {
         fps: 10,
         qrbox: {
-          width: 240,
-          height: 240
+          width: 250,
+          height: 250
         }
       },
       async (decodedText) => {
@@ -1334,7 +1362,7 @@ async function openQrScanner() {
         toast("QR scanned ✅");
       },
       () => {
-        // Ignore scan errors while camera is looking for QR.
+        // ignore scanning misses
       }
     );
   } catch (err) {

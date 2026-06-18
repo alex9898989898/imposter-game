@@ -173,7 +173,7 @@ body.light .input::placeholder {
 .screen.scrollable {
   justify-content: flex-start;
   align-items: flex-start;
-  padding-top: 30px;
+  padding-top: 300px;
 }
 
 

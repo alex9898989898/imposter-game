@@ -210,7 +210,10 @@ body.light .input::placeholder {
 
 .screen {
   position: absolute;
-  inset: 0;
+  top: 60px;     /* header height */
+  bottom: 80px;  /* footer height */
+  left: 0;
+  right: 0;
 
   display: none;
   pointer-events: none;
@@ -218,8 +221,6 @@ body.light .input::placeholder {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
-  min-height: calc(100dvh - 60px);
 }
 
 

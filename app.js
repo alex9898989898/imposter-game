@@ -1580,14 +1580,18 @@ if (showInviteBtn) {
         navigator.clipboard.writeText(link);
         toast("Invite link copied ✅");
 
+        const qrBox = document.getElementById("qrInviteBox");
         const qr = document.getElementById("qrCodeGame");
-        if (qr) {
+
+        if (qr && qrBox) {
             qr.innerHTML = "";
             new QRCode(qr, {
                 text: link,
-                width: 120,
-                height: 120
+                width: 130,
+                height: 130
             });
+
+            qrBox.style.display = "flex";
         }
     };
 }

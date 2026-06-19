@@ -206,8 +206,10 @@
 </section>
 
    <!-- Lobby -->
+
+
 <section id="lobbyScreen" class="screen scrollable">
-  <div class="card">
+  <div class="card lobby-card">
 
     <div class="room-header">
       <h2 id="roomTitle">ROOM</h2>
@@ -216,13 +218,19 @@
 
     <div id="hostBadge" class="host-badge">HOST</div>
 
-    <div class="button-row">
-      <button id="endGameBtn" class="btn btn-danger">❌ End Game</button>
-      <button id="refreshPlayersBtn" class="btn btn-warning">🔄 Refresh Players</button>
-    </div>
+    <div class="host-controls">
+      <div class="host-controls-row">
+        <button id="endGameBtn" class="btn btn-danger">❌ End Game</button>
+        <button id="refreshPlayersBtn" class="btn btn-warning">🔄 Refresh</button>
+      </div>
 
-    <button id="showInviteBtn" class="btn btn-warning full">📨 Invite Players</button>
-    <div id="qrCodeGame"></div>
+      <button id="showInviteBtn" class="btn btn-warning full">📨 Invite Players</button>
+
+      <div id="qrInviteBox" class="invite-box">
+        <div class="invite-label">Scan or share room invite</div>
+        <div id="qrCodeGame"></div>
+      </div>
+    </div>
 
     <div id="discussionTimeWrap" class="settings-box">
       <div class="settings-label">⏱ Discussion Time</div>
@@ -238,7 +246,7 @@
       <ul id="playersList"></ul>
     </div>
 
-    <div class="button-row">
+    <div class="button-row bottom-actions">
       <button id="readyBtn" class="btn btn-success">✅ Ready</button>
       <button id="leaveBtn" class="btn btn-danger">🚪 Leave</button>
     </div>
@@ -247,6 +255,11 @@
 
   </div>
 </section>
+
+
+
+
+
 
     <!-- Pass Device Screen -->
     <section id="passScreen" class="screen">

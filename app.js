@@ -1135,6 +1135,41 @@ function updateLobbyUI() {
     }
 }
 
+
+// ==========================
+// REMOVE A PLAYER
+// ==========================
+async function removePlayer(name) {
+    if (!isHost) return;
+
+    const updatedPlayers = roomData.players.filter(p => p.name !== name);
+    const validNames = updatedPlayers.map(p => p.name);
+
+    const cleanedVotes = {};
+    Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
+        if (validNames.includes(voter) && validNames.includes(target)) {
+            cleanedVotes[voter] = target;
+        }
+    });
+
+    const update = {
+        players: updatedPlayers,
+        votes: cleanedVotes,
+        nextRoundReady: (roomData.nextRoundReady || []).filter(n => validNames.includes(n)),
+        readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => validNames.includes(n)),
+        revealedPlayers: (roomData.revealedPlayers || []).filter(n => validNames.includes(n))
+    };
+
+    // if host removes the current host somehow, transfer host
+    if (roomData.host === name && updatedPlayers.length > 0) {
+        update.host = updatedPlayers[0].name;
+    }
+
+    await updateDoc(doc(db, "rooms", roomId), update);
+    toast(`${name} removed ❌`);
+}
+
+
     // ==========================
     // TOGGLE READY
     // ==========================

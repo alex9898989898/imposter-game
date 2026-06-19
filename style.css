@@ -348,22 +348,11 @@ body.light .card {
 }
 
 
+
 .card::before {
-  content: "";
-  position: absolute;
-  pointer-events: none;   /* ✅ ADD THIS */
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(120deg, transparent, #3b82f6aa, transparent);
-
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  content: none;
 }
+
 
 
 .card:hover {
@@ -1796,5 +1785,48 @@ body.light #playersList li {
 
   #playersList li {
     font-size: 17px;
+  }
+}
+
+
+/* =========================
+   IPHONE BUTTON SIZE FIX
+========================= */
+@media (max-width: 430px) {
+  .card {
+    padding: 18px;
+  }
+
+  .btn {
+    padding: 10px 12px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .host-controls .button-row .btn {
+    min-height: 42px;
+    font-size: 14px;
+  }
+
+  #showInviteBtn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .bottom-actions .btn {
+    min-height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  #startGameBtn {
+    min-height: 48px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  #playersList li {
+    font-size: 16px;
+    padding: 10px 6px;
   }
 }

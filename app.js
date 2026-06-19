@@ -568,6 +568,10 @@ themeBtn.addEventListener("click", () => {
     }
 
 async function cleanupStalePlayers() {
+
+
+
+
     if (!roomData || cleanupRunning) return;
 
     const now = Date.now();
@@ -589,11 +593,21 @@ async function cleanupStalePlayers() {
 
             return now - p.lastSeen < timeoutMs;
         });
+        const validNames = alivePlayers.map(p => p.name);
+
+const cleanedVotes = {};
+
+Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
+  if (validNames.includes(voter) && validNames.includes(target)) {
+    cleanedVotes[voter] = target;
+  }
+});
 
         if (alivePlayers.length === players.length) return;
 
         const update = {
             players: alivePlayers,
+            votes: cleanedVotes, // ✅ ADD THIS
             readyForDiscussion: (roomData.readyForDiscussion || []).filter(name =>
                 alivePlayers.some(p => p.name === name)
             ),
@@ -648,7 +662,24 @@ function setupRoomListener() {
         if (!data || !data.phase || !data.players) return;
 
         roomData = data;
-        
+// ✅ FORCE MIN 3 PLAYERS DURING GAME
+if (roomData.players.length < 3 && roomData.phase !== "lobby") {
+  if (isHost) {
+    await updateDoc(doc(db, "rooms", roomId), {
+      phase: "lobby",
+      started: false,
+      nextRoundReady: [],
+      readyForDiscussion: [],
+      revealedPlayers: [],
+      votes: {},
+      voteStarted: null,
+      timeStarted: null
+    });
+  }
+
+  toast("Not enough players");
+  return;
+}        
         const previousPhase = lastPhase;
         lastPhase = roomData.phase;
         // ✅ reset local state when going directly from results -> playing
@@ -1094,41 +1125,54 @@ async function removePlayer(name) {
     // ==========================
     // LEAVE ROOM
     // ==========================
-async function leaveRoom() {
-    const roomRef = doc(db, "rooms", roomId);
+    async function leaveRoom() {
 
-    const updatedPlayers = roomData.players.filter(
-        p => p.name !== playerName
-    );
+        const roomRef = doc(db, "rooms", roomId);
 
-    const update = {
-        players: updatedPlayers,
-        nextRoundReady: (roomData.nextRoundReady || []).filter(n => n !== playerName),
-        readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => n !== playerName),
-        revealedPlayers: (roomData.revealedPlayers || []).filter(n => n !== playerName)
-    };
+        // ✅ remove this player
+        const updatedPlayers = roomData.players.filter(
+            p => p.name !== playerName
+        );
 
-    // ✅ clean votes
-    const cleanedVotes = { ...(roomData.votes || {}) };
-    delete cleanedVotes[playerName];
-    update.votes = cleanedVotes;
+        // ✅ build valid players list
+        const validNames = updatedPlayers.map(p => p.name);
 
-    // ✅ fix host transfer
-    if (roomData.host === playerName && updatedPlayers.length > 0) {
-        update.host = updatedPlayers[0].name;
+        // ✅ clean ALL invalid votes
+        const cleanedVotes = {};
+
+        Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
+            if (validNames.includes(voter) && validNames.includes(target)) {
+                cleanedVotes[voter] = target;
+            }
+        });
+
+        const update = {
+            players: updatedPlayers,
+            votes: cleanedVotes, // ✅ IMPORTANT FIX
+
+            nextRoundReady: (roomData.nextRoundReady || []).filter(n => n !== playerName),
+            readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => n !== playerName),
+            revealedPlayers: (roomData.revealedPlayers || []).filter(n => n !== playerName)
+        };
+
+        // ✅ fix host transfer
+        if (roomData.host === playerName && updatedPlayers.length > 0) {
+            update.host = updatedPlayers[0].name;
+        }
+
+        await updateDoc(roomRef, update);
+
+        sessionStorage.removeItem("roomId");
+        sessionStorage.removeItem("playerName");
+        stopPresenceHeartbeat();
+
+        location.reload();
     }
 
-    await updateDoc(roomRef, update);
 
-    sessionStorage.removeItem("roomId");
-    sessionStorage.removeItem("playerName");
-    stopPresenceHeartbeat();
-
-    location.reload();
-}
-
-
-
+    // ==========================
+    // SET START MODE 
+    // ==========================
     function setStartMode(mode) {
         startMode = mode;
 
@@ -1844,9 +1888,14 @@ function showDiscussion() {
             const votes = roomData.votes || {};
             const total = (roomData.players || []).length;
 
-
             // ✅ instant finish
-            if (Object.keys(votes).length === total) {
+            const alivePlayers = roomData.players.map(p => p.name);
+            const aliveVotes = Object.entries(votes).filter(
+            ([voter]) => alivePlayers.includes(voter)
+            );
+
+            if (aliveVotes.length === alivePlayers.length) {
+
                 clearGameTimer();
 
                 if (isHost && roomData.phase === "voting") {

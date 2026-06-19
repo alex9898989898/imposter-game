@@ -1799,41 +1799,43 @@ body.light #playersList li {
 /* =========================
    IPHONE BUTTON SIZE FIX
 ========================= */
-
 @media (max-width: 430px) {
-  .bottom-actions .btn {
-    min-height: 48px;
-    font-size: 15px;
+  .btn {
+    padding: 10px 12px;
+    font-size: 14px;
     border-radius: 12px;
   }
 
-
   .host-controls .button-row .btn {
-    min-height: 44px;
-    font-size: 14px;
+    min-height: 42px;
+    font-size: 13px;
   }
 
   #showInviteBtn {
-    min-height: 46px;
-    font-size: 14px;
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .bottom-actions {
+    gap: 8px;
   }
 
   .bottom-actions .btn {
-    min-height: 52px;
-    font-size: 16px;
+    min-height: 46px;
+    font-size: 14px;
     border-radius: 12px;
+    padding: 10px 10px;
   }
-
 
   #startGameBtn {
-    min-height: 48px;
-    font-size: 16px;
+    min-height: 46px;
+    font-size: 15px;
     border-radius: 12px;
+    padding: 10px 12px;
   }
 
-
   #playersList li {
-    font-size: 16px;
-    padding: 10px 6px;
+    font-size: 15px;
+    padding: 9px 6px;
   }
 }

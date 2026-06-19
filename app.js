@@ -1537,25 +1537,38 @@ if (showInviteBtn) {
     showInviteBtn.onclick = () => {
         if (!isHost) return;
 
+        const qr = document.getElementById("qrCodeGame");
+        const qrInviteBox = document.getElementById("qrInviteBox");
+        if (!qr || !qrInviteBox) return;
+
+        const isOpen =
+            qrInviteBox.style.display === "flex" ||
+            getComputedStyle(qrInviteBox).display === "flex";
+
+        if (isOpen) {
+            qrInviteBox.style.display = "none";
+            qr.innerHTML = "";
+            showInviteBtn.innerText = "📨 Invite Players";
+            return;
+        }
+
         const link = `${window.location.origin}?room=${roomId}`;
         navigator.clipboard.writeText(link);
         toast("Invite link copied ✅");
 
-        const qr = document.getElementById("qrCodeGame");
-        const qrInviteBox = document.getElementById("qrInviteBox");
+        qr.innerHTML = "";
+        new QRCode(qr, {
+            text: link,
+            width: 130,
+            height: 130
+        });
 
-        if (qr && qrInviteBox) {
-            qr.innerHTML = "";
-            new QRCode(qr, {
-                text: link,
-                width: 130,
-                height: 130
-            });
-
-            qrInviteBox.style.display = "flex";
-        }
+        qrInviteBox.style.display = "flex";
+        showInviteBtn.innerText = "❌ Hide Invite";
     };
 }
+
+
 
     const savedLang = localStorage.getItem("language");
     if (savedLang) currentLanguage = savedLang;

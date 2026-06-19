@@ -205,67 +205,47 @@
   </div>
 </section>
 
-    <!-- Lobby -->
    <!-- Lobby -->
 <section id="lobbyScreen" class="screen scrollable">
-
   <div class="card">
 
     <div class="room-header">
-      <h2 id="roomTitle">
-        ROOM
-      </h2>
-
-      <span id="playerCount">
-        0 Players
-      </span>
+      <h2 id="roomTitle">ROOM</h2>
+      <span id="playerCount">0 Players</span>
     </div>
 
-    <div id="hostBadge" class="host-badge">
-      HOST
+    <div id="hostBadge" class="host-badge">HOST</div>
+
+    <div class="button-row">
+      <button id="endGameBtn" class="btn btn-danger">❌ End Game</button>
+      <button id="refreshPlayersBtn" class="btn btn-warning">🔄 Refresh Players</button>
     </div>
 
+    <button id="showInviteBtn" class="btn btn-warning full">📨 Invite Players</button>
+    <div id="qrCodeGame"></div>
 
-<div id="discussionTimeWrap" class="settings-box">
-  <div class="settings-label">⏱ Discussion Time</div>
-
-  <div id="discussionTimeButtons" class="time-options">
-    <button type="button" class="time-btn" data-time="30">30s</button>
-    <button type="button" class="time-btn active" data-time="60">60s</button>
-    <button type="button" class="time-btn" data-time="90">90s</button>
-    <button type="button" class="time-btn" data-time="120">120s</button>
-  </div>
-</div>
+    <div id="discussionTimeWrap" class="settings-box">
+      <div class="settings-label">⏱ Discussion Time</div>
+      <div id="discussionTimeButtons" class="time-options">
+        <button type="button" class="time-btn" data-time="30">30s</button>
+        <button type="button" class="time-btn active" data-time="60">60s</button>
+        <button type="button" class="time-btn" data-time="90">90s</button>
+        <button type="button" class="time-btn" data-time="120">120s</button>
+      </div>
+    </div>
 
     <div class="players-box">
       <ul id="playersList"></ul>
     </div>
 
     <div class="button-row">
-      <button
-        id="readyBtn"
-        class="btn btn-success"
-      >
-        ✅ Ready
-      </button>
-
-      <button
-        id="leaveBtn"
-        class="btn btn-danger"
-      >
-        🚪 Leave
-      </button>
+      <button id="readyBtn" class="btn btn-success">✅ Ready</button>
+      <button id="leaveBtn" class="btn btn-danger">🚪 Leave</button>
     </div>
 
-    <button
-      id="startGameBtn"
-      class="btn btn-primary full"
-    >
-      ▶ Start Game
-    </button>
+    <button id="startGameBtn" class="btn btn-primary full">▶ Start Game</button>
 
   </div>
-
 </section>
 
     <!-- Pass Device Screen -->

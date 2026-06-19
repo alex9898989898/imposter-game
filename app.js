@@ -374,77 +374,96 @@ new QRCode(qr, {
     // ==========================
     // JOIN ROOM
     // ==========================
+    window.joinRoom = async function () {
+        if (!(await isGameEnabled())) {
+            return toast("Game temporarily disabled 🚫");
+        }
 
-window.joinRoom = async function () {
-    if (!(await isGameEnabled())) {
-        return toast("Game temporarily disabled 🚫");
-    }
+        playerName = document.getElementById("playerName").value.trim();
+        const inputRoom = document.getElementById("roomCode").value.trim().toUpperCase();
 
-    playerName = document.getElementById("playerName").value.trim();
-    const inputRoom = document.getElementById("roomCode").value.trim().toUpperCase();
+        if (!playerName || !inputRoom) return toast("Fill all fields");
 
-    if (!playerName || !inputRoom) return toast("Fill all fields");
+        roomId = inputRoom;
 
-    roomId = inputRoom;
+        const roomRef = doc(db, "rooms", roomId);
+        const snap = await getDoc(roomRef);
 
-    const roomRef = doc(db, "rooms", roomId);
-    const snap = await getDoc(roomRef);
+        if (!snap.exists()) {
+            return toast("Room not found");
+        }
 
-    if (!snap.exists()) {
-        return toast("Room not found");
-    }
+        const data = snap.data();
 
-    const data = snap.data();
+        // ✅ load room language
+        if (data.language) {
+            currentLanguage = data.language;
+            localStorage.setItem("language", currentLanguage);
+            await loadWords();
+            updateLanguageBadge();
+        }
 
-    // ✅ load room language
-    if (data.language) {
-        currentLanguage = data.language;
-        localStorage.setItem("language", currentLanguage);
+        // ✅ duplicate name protection
+        const exists = data.players.some(
+            p => p.name.toLowerCase() === playerName.toLowerCase()
+        );
 
-        await loadWords();
-        updateLanguageBadge();
-    }
+        if (exists) {
+            return toast("Name already taken ❌");
+        }
 
-    // ✅ keep duplicate protection
-    const exists = data.players.some(
-        p => p.name.toLowerCase() === playerName.toLowerCase()
-    );
+        // ✅ if game already started -> join as spectator
+        if (data.phase !== "lobby") {
+            toast("Game already started — joining as spectator");
 
-    if (exists) {
-        return toast("Name already taken ❌");
-    }
+            await updateDoc(roomRef, {
+                players: arrayUnion({
+                    name: playerName,
+                    ready: false,
+                    score: 0,
+                    sessionId: playerSessionId,
+                    lastSeen: Date.now(),
+                    spectator: true
+                })
+            });
 
-    // ✅ normal join
+            sessionStorage.setItem("roomId", roomId);
+            sessionStorage.setItem("playerName", playerName);
 
-        // ✅ normal join
+            setupRoomListener();
+            showLobby(); // later you can replace with custom spectator screen
+            startPresenceHeartbeat();
+            return;
+        }
+
+        // ✅ normal join in lobby only
         await updateDoc(roomRef, {
             players: arrayUnion({
                 name: playerName,
                 ready: false,
                 score: 0,
                 sessionId: playerSessionId,
-                lastSeen: Date.now()
+                lastSeen: Date.now(),
+                spectator: false
             })
         });
 
+        sessionStorage.setItem("roomId", roomId);
+        sessionStorage.setItem("playerName", playerName);
 
-
-sessionStorage.setItem("roomId", roomId);
-sessionStorage.setItem("playerName", playerName);
-
-
-    setupRoomListener();
-    showLobby();
-    startPresenceHeartbeat();
-};
+        setupRoomListener();
+        showLobby();
+        startPresenceHeartbeat();
+    };
 
 
 
 
 
 
-
-
+    // ==========================
+    // UPDATE LANGUAGE
+    // ==========================
 const themeBtn = document.getElementById("themeBtn");
 const langBtn = document.getElementById("langBtn");
 
@@ -528,36 +547,58 @@ themeBtn.addEventListener("click", () => {
 
         if (!snap.exists()) return toast("Room not found");
 
-        const data = snap.data();
+       const data = snap.data();
 
-        const exists = data.players.some(
-            p => p.name.toLowerCase() === playerName.toLowerCase()
-        );
+const exists = data.players.some(
+    p => p.name.toLowerCase() === playerName.toLowerCase()
+);
 
-        if (exists) {
-            return toast("Name already taken ❌");
-        }
+if (exists) {
+    return toast("Name already taken ❌");
+}
 
-        await updateDoc(roomRef, {
+// ✅ if game already started -> spectator
+if (data.phase !== "lobby") {
+    toast("Game already started — joining as spectator");
 
+    await updateDoc(roomRef, {
         players: arrayUnion({
             name: playerName,
             ready: false,
             score: 0,
             sessionId: playerSessionId,
-            lastSeen: Date.now()
+            lastSeen: Date.now(),
+            spectator: true
         })
+    });
 
-        });
-
-
-    sessionStorage.setItem("roomId", roomId);
-    sessionStorage.setItem("playerName", playerName);
-
+        sessionStorage.setItem("roomId", roomId);
+        sessionStorage.setItem("playerName", playerName);
 
         setupRoomListener();
         showLobby();
         startPresenceHeartbeat();
+        return;
+    }
+
+    // ✅ normal join
+    await updateDoc(roomRef, {
+        players: arrayUnion({
+            name: playerName,
+            ready: false,
+            score: 0,
+            sessionId: playerSessionId,
+            lastSeen: Date.now(),
+            spectator: false
+        })
+    });
+
+    sessionStorage.setItem("roomId", roomId);
+    sessionStorage.setItem("playerName", playerName);
+
+    setupRoomListener();
+    showLobby();
+startPresenceHeartbeat();
 
         };
 
@@ -663,23 +704,33 @@ function setupRoomListener() {
 
         roomData = data;
 // ✅ FORCE MIN 3 PLAYERS DURING GAME
-if (roomData.players.length < 3 && roomData.phase !== "lobby") {
-  if (isHost) {
-    await updateDoc(doc(db, "rooms", roomId), {
-      phase: "lobby",
-      started: false,
-      nextRoundReady: [],
-      readyForDiscussion: [],
-      revealedPlayers: [],
-      votes: {},
-      voteStarted: null,
-      timeStarted: null
-    });
-  }
+const activePlayersCount = roomData.players.filter(p => !p.spectator).length;
 
-  toast("Not enough players");
-  return;
-}        
+if (activePlayersCount < 3 && roomData.phase !== "lobby") {
+    const amHost = roomData.host === playerName;
+
+    if (amHost) {
+        await updateDoc(doc(db, "rooms", roomId), {
+            phase: "lobby",
+            started: false,
+            nextRoundReady: [],
+            readyForDiscussion: [],
+            revealedPlayers: [],
+            votes: {},
+            voteStarted: null,
+            timeStarted: null,
+            players: roomData.players.map(p => ({
+                ...p,
+                ready: false,
+                spectator: false
+}))
+
+        });
+    }
+
+    toast("Not enough active players");
+    return;
+}
         const previousPhase = lastPhase;
         lastPhase = roomData.phase;
         // ✅ reset local state when going directly from results -> playing
@@ -719,7 +770,8 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         if (roomData.phase === "playing" && roomData.timeStarted === null) {
 
             const ready = roomData.readyForDiscussion || [];
-            const total = roomData.players.length;
+            const total = roomData.players.filter(p => !p.spectator).length;
+
             const btn = document.getElementById("continueBtn");
             if (btn) {
                 const hasClicked = (roomData.readyForDiscussion || []).includes(playerName);
@@ -780,6 +832,10 @@ if (previousPhase === "results" && roomData.phase === "playing") {
             setTimeout(() => location.reload(), 1000);
             return;
         }
+        
+        const me = roomData.players.find(p => p.name === playerName);
+        const amSpectator = !!me?.spectator;
+
 
         // ✅ HOST CHECK
         const previousHost = isHost;
@@ -810,12 +866,15 @@ if (previousPhase === "results" && roomData.phase === "playing") {
             passShown
         });
         // ✅ PASS SCREEN (ONLY ONE!)
+
         if (
             roomData.phase === "playing" &&
             roomData.timeStarted === null &&
             !passShown &&
-            !resultsShown   // ✅ ADD THIS
+            !resultsShown &&
+            !amSpectator
         ) {
+
             console.log("📺 SHOW PASS SCREEN ONCE");
 
             passShown = true;
@@ -828,7 +887,8 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         // ✅ AUTO START DISCUSSION
         if (roomData.phase === "playing" && roomData.started === true) {
             const ready = roomData.readyForDiscussion || [];
-            const totalPlayers = roomData.players.length;
+            const totalPlayers = roomData.players.filter(p => !p.spectator).length;
+
             console.log(
                 "READY:",
                 ready.length,
@@ -908,10 +968,13 @@ if (roomData.phase === "results") {
             votes: {},
             voteStarted: null,
             timeStarted: null,
+
             players: roomData.players.map(p => ({
                 ...p,
-                ready: false
+                ready: false,
+                spectator: false
             }))
+
         });
 
         toast("Need at least 3 players for next round");
@@ -1017,10 +1080,11 @@ function updateLobbyUI() {
         `${roomId} (${currentLanguage.toUpperCase()})`;
         updateDiscussionTimeButtons();
 
-    const readyCount = roomData.players.filter(p => p.ready).length;
+        const activePlayers = roomData.players.filter(p => !p.spectator);
+        const readyCount = activePlayers.filter(p => p.ready).length;
 
-    document.getElementById("playerCount").innerText =
-        `${readyCount}/${roomData.players.length} Ready`;
+        document.getElementById("playerCount").innerText =
+            `${readyCount}/${activePlayers.length} Ready`;
 
         const list = document.getElementById("playersList");
         list.innerHTML = "";
@@ -1081,18 +1145,35 @@ function updateLobbyUI() {
    // ==========================
     // REMOVE A PLAYER
     // ==========================
-    
-async function removePlayer(name) {
+    async function removePlayer(name) {
     if (!isHost) return;
 
     const updatedPlayers = roomData.players.filter(p => p.name !== name);
+    const validNames = updatedPlayers.map(p => p.name);
 
-    await updateDoc(doc(db, "rooms", roomId), {
-        players: updatedPlayers
+    const cleanedVotes = {};
+    Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
+        if (validNames.includes(voter) && validNames.includes(target)) {
+            cleanedVotes[voter] = target;
+        }
     });
 
+    const update = {
+        players: updatedPlayers,
+        votes: cleanedVotes,
+        nextRoundReady: (roomData.nextRoundReady || []).filter(n => validNames.includes(n)),
+        readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => validNames.includes(n)),
+        revealedPlayers: (roomData.revealedPlayers || []).filter(n => validNames.includes(n))
+    };
+
+    if (roomData.host === name && updatedPlayers.length > 0) {
+        update.host = updatedPlayers[0].name;
+    }
+
+    await updateDoc(doc(db, "rooms", roomId), update);
     toast(`${name} removed ❌`);
 }
+
 
 
     // ==========================
@@ -1223,6 +1304,10 @@ async function removePlayer(name) {
         }
 
         const data = snap.data();
+        
+        const me = data.players.find(p => p.name === savedPlayerName);
+        const amSpectator = !!me?.spectator;
+
 
         const stillExists = data.players.some(
             p => p.name.toLowerCase() === savedPlayerName.toLowerCase()
@@ -1255,8 +1340,12 @@ async function removePlayer(name) {
         if (data.phase === "lobby") {
             showLobby();
         } else if (data.phase === "playing" && data.timeStarted === null) {
-            passShown = false;
-            showPassScreen();
+            if (amSpectator) {
+                showLobby(); // spectator waits for next round
+            } else {
+                passShown = false;
+                showPassScreen();
+            }
         } else if (data.phase === "discussion") {
             showDiscussion();
         } else if (data.phase === "voting") {
@@ -1265,7 +1354,6 @@ async function removePlayer(name) {
             resultsShown = false;
             showResults();
         }
-
         return true;
 
     } catch (err) {
@@ -1449,6 +1537,61 @@ async function closeQrScanner() {
     // START APP
     // ==========================
 async function startApp() {
+
+    const endGameBtn = document.getElementById("endGameBtn");
+if (endGameBtn) {
+    endGameBtn.onclick = async () => {
+        if (!isHost) return;
+
+        await updateDoc(doc(db, "rooms", roomId), {
+            phase: "lobby",
+            started: false,
+            votes: {},
+            nextRoundReady: [],
+            readyForDiscussion: [],
+            revealedPlayers: [],
+            voteStarted: null,
+            timeStarted: null,
+  
+            players: roomData.players.map(p => ({
+                ...p,
+                ready: false,
+                spectator: false
+            }))
+
+        });
+
+        toast("Game ended by host");
+    };
+}
+
+const refreshPlayersBtn = document.getElementById("refreshPlayersBtn");
+if (refreshPlayersBtn) {
+    refreshPlayersBtn.onclick = () => {
+        cleanupStalePlayers();
+        toast("Refreshing players...");
+    };
+}
+
+const showInviteBtn = document.getElementById("showInviteBtn");
+if (showInviteBtn) {
+    showInviteBtn.onclick = () => {
+        const link = `${window.location.origin}?room=${roomId}`;
+        navigator.clipboard.writeText(link);
+        toast("Invite link copied ✅");
+
+        const qr = document.getElementById("qrCodeGame");
+        if (qr) {
+            qr.innerHTML = "";
+            new QRCode(qr, {
+                text: link,
+                width: 120,
+                height: 120
+            });
+        }
+    };
+}
+
     const savedLang = localStorage.getItem("language");
     if (savedLang) currentLanguage = savedLang;
     updateLanguageBadge();
@@ -1569,8 +1712,8 @@ window.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        const readyPlayers =
-            roomData.players.filter(p => p.ready);
+        const activePlayers = roomData.players.filter(p => !p.spectator);
+        const readyPlayers = activePlayers.filter(p => p.ready);
 
         if (readyPlayers.length < 3) {
             return toast("Need at least 3 ready players");
@@ -1589,8 +1732,8 @@ window.addEventListener("DOMContentLoaded", () => {
             words[Math.floor(Math.random() * words.length)];
 
         const randomPlayer =
-            roomData.players[
-                Math.floor(Math.random() * roomData.players.length)
+            activePlayers[
+                Math.floor(Math.random() * activePlayers.length)
             ];
 
         const roomRef = doc(db, "rooms", roomId);
@@ -1828,7 +1971,7 @@ function showDiscussion() {
 
         // ✅ PLAYER BUTTONS (ONLY ONCE)
         
-        const votePlayers = roomData.players || [];
+        const votePlayers = (roomData.players || []).filter(p => !p.spectator);
 
         votePlayers.forEach(p => {
 
@@ -1853,7 +1996,7 @@ function showDiscussion() {
     function updateVotingUI() {
         const votes = roomData.votes || {};
         
-        const votePlayers = roomData.players || [];
+        const votePlayers = (roomData.players || []).filter(p => !p.spectator);
         const total = votePlayers.length;
 
 
@@ -1885,16 +2028,18 @@ function showDiscussion() {
     function startVoteTimer() {
         timerInterval = setInterval(() => {
 
-            const votes = roomData.votes || {};
-            const total = (roomData.players || []).length;
 
-            // ✅ instant finish
-            const alivePlayers = roomData.players.map(p => p.name);
-            const aliveVotes = Object.entries(votes).filter(
-            ([voter]) => alivePlayers.includes(voter)
+            const votes = roomData.votes || {};
+
+            const activePlayers = (roomData.players || []).filter(p => !p.spectator);
+            const activeNames = activePlayers.map(p => p.name);
+
+            const activeVotes = Object.entries(votes).filter(
+                ([voter]) => activeNames.includes(voter)
             );
 
-            if (aliveVotes.length === alivePlayers.length) {
+            if (activeVotes.length === activeNames.length) {
+
 
                 clearGameTimer();
 
@@ -2191,7 +2336,7 @@ async function nextRound() {
     console.log("🔄 NEXT ROUND CLICKED");
 
     try {
-        const totalPlayers = roomData.players.length;
+        const totalPlayers = roomData.players.filter(p => !p.spectator).length;
 
         // ✅ if not enough players, return to lobby
         if (totalPlayers < 3) {
@@ -2206,7 +2351,8 @@ async function nextRound() {
                 timeStarted: null,
                 players: roomData.players.map(p => ({
                     ...p,
-                    ready: false
+                    ready: false,
+                    spectator: false
                 }))
             });
 
@@ -2233,8 +2379,10 @@ async function nextRound() {
 
         // ✅ pick new word + new impostor
         const randomWord = words[Math.floor(Math.random() * words.length)];
+        const activePlayers = roomData.players.filter(p => !p.spectator);
+
         const randomPlayer =
-            roomData.players[Math.floor(Math.random() * roomData.players.length)];
+            activePlayers[Math.floor(Math.random() * activePlayers.length)];    
 
         await updateDoc(roomRef, {
             phase: "playing",
@@ -2403,3 +2551,27 @@ function isDiscussionStarted() {
 window.addEventListener("pagehide", () => {
     stopPresenceHeartbeat();
 });
+
+
+
+
+
+
+async function forceVoting() {
+    if (!isHost) return;
+
+    await updateDoc(doc(db, "rooms", roomId), {
+        phase: "voting",
+        voteStarted: Date.now()
+    });
+}
+
+
+async function forceResults() {
+    if (!isHost) return;
+
+    await updateDoc(doc(db, "rooms", roomId), {
+        phase: "results"
+    });
+}
+

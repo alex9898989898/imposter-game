@@ -1789,6 +1789,13 @@ body.light #playersList li {
 }
 
 
+.public-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
 /* =========================
    IPHONE BUTTON SIZE FIX
 ========================= */

@@ -1029,7 +1029,10 @@ function updateDiscussionTimeButtons() {
     // ==========================
     // SHOW LOBBY
     // ==========================
-function showLobby() {
+
+
+
+    function showLobby() {
     justCreatedRoom = false;
     showScreen("lobby");
 
@@ -1039,7 +1042,6 @@ function showLobby() {
 
     const discussionTimeWrap = document.getElementById("discussionTimeWrap");
     const hostControls = document.getElementById("hostControls");
-    const qrInviteBox = document.getElementById("qrInviteBox");
 
     const timeButtons = document.querySelectorAll(".time-btn");
 
@@ -1059,7 +1061,6 @@ function showLobby() {
         startBtn.style.display = "none";
         if (discussionTimeWrap) discussionTimeWrap.style.display = "none";
         if (hostControls) hostControls.style.display = "none";
-        if (qrInviteBox) qrInviteBox.style.display = "none";
     }
 
     startBtn.onclick = startGame;
@@ -1068,6 +1069,13 @@ function showLobby() {
 
     updateDiscussionTimeButtons();
 }
+
+
+
+
+
+
+
     // ==========================
     // UPDATE LOBBY UI
     // ==========================
@@ -1567,11 +1575,11 @@ if (refreshPlayersBtn) {
     };
 }
 
+
+
 const showInviteBtn = document.getElementById("showInviteBtn");
 if (showInviteBtn) {
-    showInviteBtn.onclick = () => {
-        if (!isHost) return;
-
+    showInviteBtn.onclick = async () => {
         const qr = document.getElementById("qrCodeGame");
         const qrInviteBox = document.getElementById("qrInviteBox");
         if (!qr || !qrInviteBox) return;
@@ -1588,8 +1596,13 @@ if (showInviteBtn) {
         }
 
         const link = `${window.location.origin}?room=${roomId}`;
-        navigator.clipboard.writeText(link);
-        toast("Invite link copied ✅");
+
+        try {
+            await navigator.clipboard.writeText(link);
+            toast("Invite link copied ✅");
+        } catch (err) {
+            toast("Could not copy link");
+        }
 
         qr.innerHTML = "";
         new QRCode(qr, {
@@ -1602,6 +1615,8 @@ if (showInviteBtn) {
         showInviteBtn.innerText = "❌ Hide Invite";
     };
 }
+
+
 
 
 

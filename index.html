@@ -208,9 +208,12 @@
    <!-- Lobby -->
 
 
-<section id="lobbyScreen" class="screen scrollable">
-  <div class="card lobby-card">
 
+
+
+
+   <section id="lobbyScreen" class="screen scrollable">
+  <div class="card lobby-card">
     <div class="room-header">
       <h2 id="roomTitle">ROOM</h2>
       <span id="playerCount">0 Players</span>
@@ -218,13 +221,16 @@
 
     <div id="hostBadge" class="host-badge">HOST</div>
 
-    <!-- ✅ HOST ONLY CONTROLS -->
+    <!-- HOST ONLY -->
     <div id="hostControls" class="host-controls">
       <div class="button-row">
         <button id="endGameBtn" class="btn btn-danger">❌ End Game</button>
         <button id="refreshPlayersBtn" class="btn btn-warning">🔄 Refresh</button>
       </div>
+    </div>
 
+    <!-- EVERYONE CAN SEE THIS -->
+    <div class="public-invite">
       <button id="showInviteBtn" class="btn btn-warning full">📨 Invite Players</button>
 
       <div id="qrInviteBox" class="invite-box">
@@ -253,10 +259,8 @@
     </div>
 
     <button id="startGameBtn" class="btn btn-primary full">▶ Start Game</button>
-
   </div>
 </section>
-
 
 
 

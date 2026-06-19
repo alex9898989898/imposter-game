@@ -1792,12 +1792,14 @@ body.light #playersList li {
 /* =========================
    IPHONE BUTTON SIZE FIX
 ========================= */
+
 @media (max-width: 430px) {
-  .btn {
-    padding: 11px 12px;
+  .bottom-actions .btn {
+    min-height: 48px;
     font-size: 15px;
     border-radius: 12px;
   }
+
 
   .host-controls .button-row .btn {
     min-height: 44px;
@@ -1815,11 +1817,13 @@ body.light #playersList li {
     border-radius: 12px;
   }
 
+
   #startGameBtn {
-    min-height: 52px;
-    font-size: 17px;
+    min-height: 48px;
+    font-size: 16px;
     border-radius: 12px;
   }
+
 
   #playersList li {
     font-size: 16px;

@@ -1835,3 +1835,136 @@ body.light #playersList li {
 #qrInviteBox {
   display: none;
 }
+/* =========================
+   LOBBY HOST CONTROLS UPGRADE
+========================= */
+
+.lobby-card {
+  gap: 14px;
+}
+
+/* host-only controls panel */
+.host-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+body.light .host-controls {
+  background: rgba(0,0,0,0.035);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* invite QR area */
+#qrInviteBox {
+  display: none; /* ✅ hidden until Invite clicked */
+}
+
+.invite-box {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(255,255,255,0.12);
+}
+
+body.light .invite-box {
+  background: rgba(0,0,0,0.02);
+  border: 1px dashed rgba(0,0,0,0.12);
+}
+
+.invite-label {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.8;
+  text-align: center;
+}
+
+#qrCodeGame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#qrCodeGame img,
+#qrCodeGame canvas {
+  width: 130px !important;
+  height: 130px !important;
+  display: block;
+  background: white;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+}
+
+/* ✅ IMPORTANT: force player list to stay visible */
+.players-box {
+  margin: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+
+  min-height: 180px;   /* ✅ keeps list visible */
+  max-height: 260px;   /* ✅ scroll inside if needed */
+  flex: 0 0 auto;      /* ✅ do not collapse */
+  overflow: hidden;
+}
+
+body.light .players-box {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* players list scroll */
+#playersList {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+#playersList li {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 18px;
+}
+
+body.light #playersList li {
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+/* bottom buttons */
+.bottom-actions .btn {
+  min-height: 58px;
+  font-size: 17px;
+  border-radius: 14px;
+}
+
+#startGameBtn {
+  min-height: 56px;
+  border-radius: 14px;
+  font-size: 18px;
+  margin-top: 0;
+}
+
+@media (max-width: 500px) {
+  #qrCodeGame img,
+  #qrCodeGame canvas {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  #playersList li {
+    font-size: 17px;
+  }
+}

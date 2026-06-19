@@ -1038,18 +1038,18 @@ function showLobby() {
     const leaveBtn = document.getElementById("leaveBtn");
 
     const discussionTimeWrap = document.getElementById("discussionTimeWrap");
+    const hostControls = document.getElementById("hostControls");
+    const qrInviteBox = document.getElementById("qrInviteBox");
+
     const timeButtons = document.querySelectorAll(".time-btn");
 
     if (isHost) {
         startBtn.style.display = "block";
-
-        if (discussionTimeWrap) {
-            discussionTimeWrap.style.display = "block";
-        }
+        if (discussionTimeWrap) discussionTimeWrap.style.display = "block";
+        if (hostControls) hostControls.style.display = "flex";
 
         timeButtons.forEach(btn => {
             btn.disabled = false;
-
             btn.onclick = () => {
                 const value = Number(btn.dataset.time);
                 updateDiscussionTime(value);
@@ -1057,10 +1057,9 @@ function showLobby() {
         });
     } else {
         startBtn.style.display = "none";
-
-        if (discussionTimeWrap) {
-            discussionTimeWrap.style.display = "none";
-        }
+        if (discussionTimeWrap) discussionTimeWrap.style.display = "none";
+        if (hostControls) hostControls.style.display = "none";
+        if (qrInviteBox) qrInviteBox.style.display = "none";
     }
 
     startBtn.onclick = startGame;
@@ -1078,103 +1077,63 @@ function updateLobbyUI() {
 
     document.getElementById("roomTitle").innerText =
         `${roomId} (${currentLanguage.toUpperCase()})`;
-        updateDiscussionTimeButtons();
 
-        const activePlayers = roomData.players.filter(p => !p.spectator);
-        const readyCount = activePlayers.filter(p => p.ready).length;
+    updateDiscussionTimeButtons();
 
-        document.getElementById("playerCount").innerText =
-            `${readyCount}/${activePlayers.length} Ready`;
+    const activePlayers = roomData.players.filter(p => !p.spectator);
+    const readyCount = activePlayers.filter(p => p.ready).length;
 
-        const list = document.getElementById("playersList");
-        list.innerHTML = "";
+    document.getElementById("playerCount").innerText =
+        `${readyCount}/${activePlayers.length} Ready`;
 
-        roomData.players.forEach(p => {
-            
-            const li = document.createElement("li");
-            li.style.display = "flex";
-            li.style.alignItems = "center";
-            li.style.justifyContent = "space-between";
+    const list = document.getElementById("playersList");
+    list.innerHTML = "";
 
-            // LEFT SIDE (✅ + name)
-            const left = document.createElement("div");
+    roomData.players.forEach(p => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.alignItems = "center";
+        li.style.justifyContent = "space-between";
 
-            left.innerText =
-                (p.ready ? "✅ " : "⏳ ") +
-                p.name +
-                (roomData.host === p.name ? " 👑" : "");
+        const left = document.createElement("div");
 
-            li.appendChild(left);
+        const icon = p.spectator ? "👀 " : (p.ready ? "✅ " : "⏳ ");
+        const spectatorTag = p.spectator ? " (spectator)" : "";
+        const crown = roomData.host === p.name ? " 👑" : "";
 
-            // RIGHT SIDE (❌ button for host)
-            if (isHost && p.name !== playerName) {
-                const btn = document.createElement("button");
-                btn.innerText = "❌";
+        left.innerText = icon + p.name + spectatorTag + crown;
+        li.appendChild(left);
 
-                btn.onclick = () => removePlayer(p.name);
-
-                li.appendChild(btn);
-            }
-
-            list.appendChild(li);
-
-        });
-
-        document.getElementById("hostBadge").style.display =
-            isHost ? "block" : "none";
-
-        const me = roomData.players.find(p => p.name === playerName);
-        const btn = document.getElementById("readyBtn");
-
-        if (btn) {
-            if (me && me.ready) {
-                btn.disabled = true;
-                btn.innerText = "You are ready ✅";
-                btn.classList.remove("btn-success");
-                btn.classList.add("btn-warning");
-            } else {
-                btn.disabled = false;
-                btn.innerText = "✅ Ready Up";
-                btn.classList.remove("btn-warning");
-                btn.classList.add("btn-success");
-            }
+        if (isHost && p.name !== playerName) {
+            const btn = document.createElement("button");
+            btn.innerText = "❌";
+            btn.onclick = () => removePlayer(p.name);
+            li.appendChild(btn);
         }
-    }
 
-
-   // ==========================
-    // REMOVE A PLAYER
-    // ==========================
-    async function removePlayer(name) {
-    if (!isHost) return;
-
-    const updatedPlayers = roomData.players.filter(p => p.name !== name);
-    const validNames = updatedPlayers.map(p => p.name);
-
-    const cleanedVotes = {};
-    Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
-        if (validNames.includes(voter) && validNames.includes(target)) {
-            cleanedVotes[voter] = target;
-        }
+        list.appendChild(li);
     });
 
-    const update = {
-        players: updatedPlayers,
-        votes: cleanedVotes,
-        nextRoundReady: (roomData.nextRoundReady || []).filter(n => validNames.includes(n)),
-        readyForDiscussion: (roomData.readyForDiscussion || []).filter(n => validNames.includes(n)),
-        revealedPlayers: (roomData.revealedPlayers || []).filter(n => validNames.includes(n))
-    };
+    document.getElementById("hostBadge").style.display =
+        isHost ? "block" : "none";
 
-    if (roomData.host === name && updatedPlayers.length > 0) {
-        update.host = updatedPlayers[0].name;
+    const me = roomData.players.find(p => p.name === playerName);
+    const btn = document.getElementById("readyBtn");
+
+    if (btn) {
+        if (me && me.ready) {
+            btn.disabled = true;
+            btn.innerText = "You are ready ✅";
+            btn.classList.remove("btn-success");
+            btn.classList.add("btn-warning");
+        } else {
+            btn.disabled = false;
+            btn.innerText = "✅ Ready Up";
+            btn.classList.remove("btn-warning");
+            btn.classList.add("btn-success");
+        }
     }
-
-    await updateDoc(doc(db, "rooms", roomId), update);
-    toast(`${name} removed ❌`);
 }
-
-
 
     // ==========================
     // TOGGLE READY
@@ -1576,14 +1535,16 @@ if (refreshPlayersBtn) {
 const showInviteBtn = document.getElementById("showInviteBtn");
 if (showInviteBtn) {
     showInviteBtn.onclick = () => {
+        if (!isHost) return;
+
         const link = `${window.location.origin}?room=${roomId}`;
         navigator.clipboard.writeText(link);
         toast("Invite link copied ✅");
 
-        const qrBox = document.getElementById("qrInviteBox");
         const qr = document.getElementById("qrCodeGame");
+        const qrInviteBox = document.getElementById("qrInviteBox");
 
-        if (qr && qrBox) {
+        if (qr && qrInviteBox) {
             qr.innerHTML = "";
             new QRCode(qr, {
                 text: link,
@@ -1591,7 +1552,7 @@ if (showInviteBtn) {
                 height: 130
             });
 
-            qrBox.style.display = "flex";
+            qrInviteBox.style.display = "flex";
         }
     };
 }

@@ -1132,6 +1132,7 @@ function updateLobbyUI() {
         `${roomId} (${currentLanguage.toUpperCase()})`;
 
     updateDiscussionTimeButtons();
+    updateImpostorCountUI();
 
     const activePlayers = roomData.players.filter(p => !p.spectator);
     const readyCount = activePlayers.filter(p => p.ready).length;
@@ -1187,7 +1188,6 @@ function updateLobbyUI() {
         }
     }
 }
-
 
 // ==========================
 // REMOVE A PLAYER
@@ -1827,15 +1827,7 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("WORDS LOADED");
 
         
-
-
-
-
-
-
-
-
-    function getImpostorNames(data = roomData) {
+function getImpostorNames(data = roomData) {
     if (Array.isArray(data?.impostors) && data.impostors.length > 0) {
         return data.impostors;
     }
@@ -1846,13 +1838,21 @@ window.addEventListener("DOMContentLoaded", () => {
 }
 
 async function updateImpostorCount(delta) {
-    if (!isHost || roomData.phase !== "lobby") return;
+    if (!isHost || !roomData || roomData.phase !== "lobby") return;
 
     const activePlayers = (roomData.players || []).filter(p => !p.spectator);
     const maxImpostors = Math.max(1, Math.min(3, activePlayers.length - 2));
 
     const current = Number(roomData.impostorCount || 1);
     const next = Math.max(1, Math.min(maxImpostors, current + delta));
+
+    if (next === current) {
+        if (delta > 0) {
+            return toast(`Max impostors is ${maxImpostors} for ${activePlayers.length} players`);
+        } else {
+            return toast("Minimum is 1 impostor");
+        }
+    }
 
     await updateDoc(doc(db, "rooms", roomId), {
         impostorCount: next
@@ -1865,6 +1865,9 @@ function updateImpostorCountUI() {
         el.innerText = String(roomData?.impostorCount || 1);
     }
 }
+
+
+
 
     // ==========================
     // START GAME (HOST ONLY)

@@ -13,7 +13,8 @@ import {
   updateDoc,
   onSnapshot,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 
@@ -55,5 +56,6 @@ export {
   updateDoc,
   onSnapshot,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  runTransaction
 };

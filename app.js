@@ -2,7 +2,7 @@
     // ==========================
     // IMPORT FIREBASE
     // ==========================
-    import {
+import {
     db,
     doc,
     setDoc,
@@ -10,8 +10,9 @@
     updateDoc,
     onSnapshot,
     arrayUnion,
-    arrayRemove
-    } from "./firebase.js";
+    arrayRemove,
+    runTransaction
+} from "./firebase.js";
 
 
     // ==========================
@@ -1223,29 +1224,54 @@ async function removePlayer(name) {
     // ==========================
     // TOGGLE READY
     // ==========================
+
+
     async function toggleReady() {
+    if (!roomId) return;
 
-        if (roomData.phase !== "lobby") return; // ✅ KEY FIX
+    const roomRef = doc(db, "rooms", roomId);
+    const btn = document.getElementById("readyBtn");
 
-        const btn = document.getElementById("readyBtn");
-
+    if (btn) {
         btn.disabled = true;
         btn.innerText = "✅ Ready";
-
-        const roomRef = doc(db, "rooms", roomId);
-
-        const updated = roomData.players.map(p => {
-            if (p.name === playerName) {
-                return { ...p, ready: true };
-            }
-            return p;
-        });
-
-        await updateDoc(roomRef, {
-            players: updated
-        });
     }
 
+    try {
+        await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(roomRef);
+
+            if (!snap.exists()) {
+                throw new Error("Room not found");
+            }
+
+            const data = snap.data();
+
+            if (data.phase !== "lobby") return;
+
+            const updatedPlayers = (data.players || []).map(p => {
+                if (p.name === playerName) {
+                    return { ...p, ready: true };
+                }
+                return p;
+            });
+
+            transaction.update(roomRef, {
+                players: updatedPlayers
+            });
+        });
+
+    } catch (err) {
+        console.error("❌ toggleReady transaction error:", err);
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "✅ Ready Up";
+        }
+
+        toast("Failed to ready up");
+    }
+}
 
     // ==========================
     // LEAVE ROOM

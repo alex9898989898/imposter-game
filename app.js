@@ -614,18 +614,20 @@ startPresenceHeartbeat();
     }
 
 
-
-    async function cleanupStalePlayers() {
+async function cleanupStalePlayers() {
     if (!isHost || !roomData || cleanupRunning) return;
 
+    // ✅ never auto-kick in active gameplay
+    if (!["lobby", "results"].includes(roomData.phase)) return;
+
     const now = Date.now();
-    if (now - lastCleanup < 15000) return;
+    if (now - lastCleanup < 20000) return;
     lastCleanup = now;
 
     cleanupRunning = true;
 
     try {
-        const timeoutMs = 90000; // ✅ much safer than 30s
+        const timeoutMs = 240000; // 4 minutes
 
         const players = roomData.players || [];
 
@@ -666,7 +668,6 @@ startPresenceHeartbeat();
         cleanupRunning = false;
     }
 }
-
 
 
 function setupRoomListener() {
@@ -843,9 +844,13 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         updateLanguageControl();
         updateLobbyUI();
 
-        if (isHost) {
+
+       
+        if (isHost && roomData.phase === "lobby") {
             cleanupStalePlayers();
         }
+
+
 
         console.log("CHECK PASS:", {
             phase: roomData.phase,
@@ -2716,3 +2721,8 @@ async function forceResults() {
     });
 }
 
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        touchPresence().catch(err => console.error("❌ visibility touch error:", err));
+    }
+});

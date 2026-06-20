@@ -1117,14 +1117,11 @@ function showLobby() {
 
 
 
-
-
-
-
     // ==========================
     // UPDATE LOBBY UI
     // ==========================
    
+
 function updateLobbyUI() {
     if (!roomData) return;
 
@@ -1826,7 +1823,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     console.log("WORDS LOADED");
 
-        
+
+
+
 function getImpostorNames(data = roomData) {
     if (Array.isArray(data?.impostors) && data.impostors.length > 0) {
         return data.impostors;
@@ -1865,6 +1864,7 @@ function updateImpostorCountUI() {
         el.innerText = String(roomData?.impostorCount || 1);
     }
 }
+
 
 
 

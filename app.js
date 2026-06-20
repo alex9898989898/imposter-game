@@ -37,15 +37,25 @@
     let startMode = "create";
     let lastCleanup = 0;
     let presenceInterval = null;
-    
     let playerSessionId =
         sessionStorage.getItem("playerSessionId") ||
         (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
     sessionStorage.setItem("playerSessionId", playerSessionId);
-
     let cleanupRunning = false;
+    let continueCountdownInterval = null;
+    let continueAutoTimeout = null;
 
+    function clearContinueCountdown() {
+        if (continueCountdownInterval) {
+            clearInterval(continueCountdownInterval);
+            continueCountdownInterval = null;
+        }
+        if (continueAutoTimeout) {
+            clearTimeout(continueAutoTimeout);
+            continueAutoTimeout = null;
+        }
+    }
 
 
     function clearGameTimer() {
@@ -245,29 +255,28 @@ window.createRoom = async function () {
     const roomRef = doc(db, "rooms", roomId);
 
     await setDoc(roomRef, {
-      host: playerName,
-      phase: "lobby",
-      started: false,
-      language: currentLanguage,
-      discussionTime: 60,
-      nextRoundReady: [],
-      readyForDiscussion: [],
-      revealedPlayers: [],
-      votes: {},
-
-      voteStarted: null,
-      timeStarted: null,
-
- players: [
-  {
-    name: playerName,
-    ready: false,
-    score: 0,
-    sessionId: playerSessionId,
-    lastSeen: Date.now()
-  }
-]
-
+    host: playerName,
+    phase: "lobby",
+    started: false,
+    language: currentLanguage,
+    discussionTime: 60,
+    impostorCount: 1,
+    impostors: [],
+    nextRoundReady: [],
+    readyForDiscussion: [],
+    revealedPlayers: [],
+    votes: {},
+    voteStarted: null,
+    timeStarted: null,
+    players: [
+        {
+        name: playerName,
+        ready: false,
+        score: 0,
+        sessionId: playerSessionId,
+        lastSeen: Date.now()
+        }
+    ]
     });
 
     // ✅ SAVE SESSION AFTER FIREBASE SUCCESS
@@ -293,7 +302,19 @@ window.createRoom = async function () {
 
 
 
+function updateHostLobbyButton() {
+    const btn = document.getElementById("hostLobbyBtn");
+    if (!btn) return;
 
+    const gamePhases = ["lobby", "playing", "discussion", "voting", "results"];
+    const shouldShow =
+        isHost &&
+        !!roomId &&
+        !!roomData &&
+        gamePhases.includes(roomData.phase);
+
+    btn.style.display = shouldShow ? "inline-flex" : "none";
+}
 
 
 
@@ -812,6 +833,7 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         console.log("🧠 readyForDiscussion:", roomData.readyForDiscussion);
         console.log("🧠 passShown:", passShown);
         console.log("🧠 discussionStarted:", discussionStarted);  
+        
         // ✅ AUTO-KICK IF REMOVED
         const stillInRoom = roomData.players.some(p => p.name === playerName);
         if (!stillInRoom) {
@@ -835,6 +857,7 @@ if (previousPhase === "results" && roomData.phase === "playing") {
         if (!isHost) {
         document.getElementById("langMenu").style.display = "none";
         }
+        updateHostLobbyButton();
         
         if (previousHost !== isHost && roomData.phase === "lobby") {
             showLobby();
@@ -1010,19 +1033,26 @@ async function updateDiscussionTime(value) {
         discussionTime: Number(value)
     });
 }
+
+
+
 function updateDiscussionTimeButtons() {
     const timeButtons = document.querySelectorAll(".time-btn");
     const current = Number(roomData?.discussionTime || 60);
 
     timeButtons.forEach(btn => {
         const value = Number(btn.dataset.time);
-
         if (value === current) {
             btn.classList.add("active");
         } else {
             btn.classList.remove("active");
         }
     });
+
+    const discussionTimeInput = document.getElementById("discussionTimeInput");
+    if (discussionTimeInput) {
+        discussionTimeInput.value = current;
+    }
 }
     // ==========================
     // SHOW LOBBY
@@ -1030,7 +1060,7 @@ function updateDiscussionTimeButtons() {
 
 
 
-    function showLobby() {
+function showLobby() {
     justCreatedRoom = false;
     showScreen("lobby");
 
@@ -1042,11 +1072,16 @@ function updateDiscussionTimeButtons() {
     const hostControls = document.getElementById("hostControls");
 
     const timeButtons = document.querySelectorAll(".time-btn");
+    const discussionTimeInput = document.getElementById("discussionTimeInput");
+    const applyDiscussionTimeBtn = document.getElementById("applyDiscussionTimeBtn");
+
+    const impostorCountWrap = document.getElementById("impostorCountWrap");
 
     if (isHost) {
         startBtn.style.display = "block";
         if (discussionTimeWrap) discussionTimeWrap.style.display = "block";
         if (hostControls) hostControls.style.display = "flex";
+        if (impostorCountWrap) impostorCountWrap.style.display = "block";
 
         timeButtons.forEach(btn => {
             btn.disabled = false;
@@ -1055,10 +1090,21 @@ function updateDiscussionTimeButtons() {
                 updateDiscussionTime(value);
             };
         });
+
+        if (applyDiscussionTimeBtn && discussionTimeInput) {
+            applyDiscussionTimeBtn.onclick = () => {
+                const value = Number(discussionTimeInput.value);
+                if (!value || value < 10 || value > 900) {
+                    return toast("Set 10–900 seconds");
+                }
+                updateDiscussionTime(value);
+            };
+        }
     } else {
         startBtn.style.display = "none";
         if (discussionTimeWrap) discussionTimeWrap.style.display = "none";
         if (hostControls) hostControls.style.display = "none";
+        if (impostorCountWrap) impostorCountWrap.style.display = "none";
     }
 
     startBtn.onclick = startGame;
@@ -1066,6 +1112,7 @@ function updateDiscussionTimeButtons() {
     leaveBtn.onclick = leaveRoom;
 
     updateDiscussionTimeButtons();
+    updateImpostorCountUI();
 }
 
 
@@ -1369,6 +1416,7 @@ async function goToMainPage() {
         // stop listeners/timers first
         stopPresenceHeartbeat();
         clearGameTimer();
+        
 
         if (unsubscribeRoom) {
             unsubscribeRoom();
@@ -1406,7 +1454,7 @@ async function goToMainPage() {
 
         // remove ?room=... from URL
         window.history.replaceState({}, "", window.location.pathname);
-
+        updateHostLobbyButton();
         showScreen("start");
         setStartMode("create");
 
@@ -1533,10 +1581,61 @@ async function closeQrScanner() {
     modal.classList.remove("show");
   }
 }
+
+
+async function goBackToLobby() {
+    if (!isHost || !roomId || !roomData) return;
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    await updateDoc(roomRef, {
+        phase: "lobby",
+        started: false,
+        nextRoundReady: [],
+        readyForDiscussion: [],
+        revealedPlayers: [],
+        votes: {},
+        voteStarted: null,
+        timeStarted: null,
+        revealedWord: null,
+        roundWinners: [],
+
+        players: roomData.players.map(p => ({
+            ...p,
+            ready: false,
+            spectator: false,
+            score: 0 // remove this line if you want to keep statistics
+        }))
+    });
+
+    passShown = false;
+    discussionStarted = false;
+    votingStarted = false;
+    resultsShown = false;
+    resultsTriggered = false;
+    nextRoundStarted = false;
+    timeLeft = 0;
+    clearGameTimer();
+
+    toast("Returned to lobby");
+}
     // ==========================
     // START APP
     // ==========================
 async function startApp() {
+
+    const impostorMinusBtn = document.getElementById("impostorMinusBtn");
+const impostorPlusBtn = document.getElementById("impostorPlusBtn");
+
+if (impostorMinusBtn) {
+    impostorMinusBtn.onclick = () => updateImpostorCount(-1);
+}
+
+if (impostorPlusBtn) {
+    impostorPlusBtn.onclick = () => updateImpostorCount(1);
+}
+
+
 
     const endGameBtn = document.getElementById("endGameBtn");
 if (endGameBtn) {
@@ -1573,7 +1672,12 @@ if (refreshPlayersBtn) {
     };
 }
 
-
+const hostLobbyBtn = document.getElementById("hostLobbyBtn");
+if (hostLobbyBtn) {
+    hostLobbyBtn.onclick = async () => {
+        await goBackToLobby();
+    };
+}
 
 const showInviteBtn = document.getElementById("showInviteBtn");
 if (showInviteBtn) {
@@ -1725,58 +1829,95 @@ window.addEventListener("DOMContentLoaded", () => {
         
 
 
+
+
+
+
+
+
+    function getImpostorNames(data = roomData) {
+    if (Array.isArray(data?.impostors) && data.impostors.length > 0) {
+        return data.impostors;
+    }
+    if (data?.impostor) {
+        return [data.impostor];
+    }
+    return [];
+}
+
+async function updateImpostorCount(delta) {
+    if (!isHost || roomData.phase !== "lobby") return;
+
+    const activePlayers = (roomData.players || []).filter(p => !p.spectator);
+    const maxImpostors = Math.max(1, Math.min(3, activePlayers.length - 2));
+
+    const current = Number(roomData.impostorCount || 1);
+    const next = Math.max(1, Math.min(maxImpostors, current + delta));
+
+    await updateDoc(doc(db, "rooms", roomId), {
+        impostorCount: next
+    });
+}
+
+function updateImpostorCountUI() {
+    const el = document.getElementById("impostorCountValue");
+    if (el) {
+        el.innerText = String(roomData?.impostorCount || 1);
+    }
+}
+
     // ==========================
     // START GAME (HOST ONLY)
     // ==========================
-    async function startGame() {
+   async function startGame() {
+    if (!isHost) return;
 
-        if (!isHost) return;
-
-        
-        if (roomData.phase !== "lobby") {
-            return toast("Game already started");
-        }
-
-
-        const activePlayers = roomData.players.filter(p => !p.spectator);
-        const readyPlayers = activePlayers.filter(p => p.ready);
-
-        if (readyPlayers.length < 3) {
-            return toast("Need at least 3 ready players");
-        }
-
-
-        if (!words.length) {
-            await loadWords(); // ✅ force load
-        }
-
-        if (!words.length) {
-            return toast("No words loaded ❌");
-        }
-
-        const randomWord =
-            words[Math.floor(Math.random() * words.length)];
-
-        const randomPlayer =
-            activePlayers[
-                Math.floor(Math.random() * activePlayers.length)
-            ];
-
-        const roomRef = doc(db, "rooms", roomId);
-
-        await updateDoc(roomRef, {
-            started: true,
-            phase: "playing",
-            word: randomWord,
-            impostor: randomPlayer.name,
-            nextRoundReady: [], // ✅ ADD THIS
-            revealedPlayers: [],
-            readyForDiscussion: [],
-            votes: {},
-            voteStarted: null,
-            timeStarted: null   
-        });
+    if (roomData.phase !== "lobby") {
+        return toast("Game already started");
     }
+
+    const activePlayers = roomData.players.filter(p => !p.spectator);
+    const readyPlayers = activePlayers.filter(p => p.ready);
+
+    const impostorCount = Number(roomData.impostorCount || 1);
+
+    if (readyPlayers.length < 3) {
+        return toast("Need at least 3 ready players");
+    }
+
+    if (readyPlayers.length < impostorCount + 2) {
+        return toast("Need at least 2 more players than impostors");
+    }
+
+    if (!words.length) {
+        await loadWords();
+    }
+
+    if (!words.length) {
+        return toast("No words loaded ❌");
+    }
+
+    const randomWord = words[Math.floor(Math.random() * words.length)];
+
+    const shuffled = [...readyPlayers].sort(() => Math.random() - 0.5);
+    const impostorNames = shuffled.slice(0, impostorCount).map(p => p.name);
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    await updateDoc(roomRef, {
+        started: true,
+        phase: "playing",
+        word: randomWord,
+        impostor: impostorNames[0],   // backward compatibility
+        impostors: impostorNames,
+        nextRoundReady: [],
+        revealedPlayers: [],
+        readyForDiscussion: [],
+        votes: {},
+        voteStarted: null,
+        timeStarted: null
+    });
+}
     // ==========================
     // SHOW PASS SCREEN
     // ==========================
@@ -1789,7 +1930,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const roomRef = doc(db, "rooms", roomId);
 
-        if (playerName === data.impostor) {
+        const impostorNames = getImpostorNames(data);
+
+if (impostorNames.includes(playerName)) {
             myRole = "IMPOSTOR";
         } else {
             myRole = "INNOCENT";
@@ -1977,11 +2120,11 @@ function getActivePlayers() {
 }
 
 function getEligibleVoters() {
+    const impostorNames = getImpostorNames();
     return (roomData.players || []).filter(
-        p => !p.spectator && p.name !== roomData.impostor
+        p => !p.spectator && !impostorNames.includes(p.name)
     );
 }
-
     // ==========================
     // SHOW VOTING UI
     // ==========================
@@ -2006,7 +2149,11 @@ function getEligibleVoters() {
     container.appendChild(info);
 
     // ✅ impostor sees message only, no vote buttons
-    if (playerName === roomData.impostor) {
+    
+const impostorNames = getImpostorNames();
+
+if (impostorNames.includes(playerName)) {
+
         const msg = document.createElement("div");
         msg.className = "center";
         msg.innerText = "🕵️ Impostor cannot vote";
@@ -2121,7 +2268,11 @@ function startVoteTimer() {
 
 async function votePlayer(target) {
     // ✅ impostor cannot vote
-    if (playerName === roomData.impostor) {
+    
+const impostorNames = getImpostorNames();
+
+if (impostorNames.includes(playerName)) {
+
         return toast("Impostor cannot vote");
     }
 
@@ -2160,19 +2311,19 @@ async function votePlayer(target) {
 
 function computeRoundOutcome(data) {
     const votes = data.votes || {};
-    const impostorName = data.impostor;
+    const impostorNames = getImpostorNames(data);
 
     const correctGuessers = Object.keys(votes).filter(
-        voter => votes[voter] === impostorName
+        voter => impostorNames.includes(votes[voter])
     );
 
     const impostorEscaped = correctGuessers.length === 0;
 
     return {
-        impostorName,
+        impostorNames,
         word: data.word,
         correctGuessers,
-        roundWinners: impostorEscaped ? [impostorName] : correctGuessers,
+        roundWinners: impostorEscaped ? impostorNames : correctGuessers,
         impostorEscaped
     };
 }
@@ -2318,17 +2469,21 @@ if (backToLobbyBtn) {
         const impostor = roomData.impostor;
         const revealedWord = roomData.revealedWord || roomData.word || "-";
 
+        const impostorNames = getImpostorNames(roomData);
+        const impostorLabel = impostorNames.join(", ");
+
         let winners = [];
 
-        // ✅ Players who guessed the impostor correctly
         Object.keys(votes).forEach(player => {
-            if (votes[player] === impostor) {
+            if (impostorNames.includes(votes[player])) {
                 winners.push(player);
             }
         });
 
+       const impostorNames = getImpostorNames(roomData);
+        const impostorLabel = impostorNames.join(", ");
         const guessedCorrectly = winners.includes(playerName);
-        const iAmImpostor = playerName === impostor;
+        const iAmImpostor = impostorNames.includes(playerName);
 
         // ==========================
         // CASE 1: Impostor was found
@@ -2580,15 +2735,17 @@ async function nextRound() {
         // ✅ pick new word + new impostor
         const randomWord = words[Math.floor(Math.random() * words.length)];
         const activePlayers = roomData.players.filter(p => !p.spectator);
+        const impostorCount = Number(roomData.impostorCount || 1);
 
-        const randomPlayer =
-            activePlayers[Math.floor(Math.random() * activePlayers.length)];    
+        const shuffled = [...activePlayers].sort(() => Math.random() - 0.5);
+        const impostorNames = shuffled.slice(0, impostorCount).map(p => p.name);
 
         await updateDoc(roomRef, {
             phase: "playing",
             started: true,
             word: randomWord,
-            impostor: randomPlayer.name,
+            impostor: impostorNames[0],
+            impostors: impostorNames,
 
             // ✅ reset round fields
             nextRoundReady: [],
@@ -2618,70 +2775,98 @@ async function nextRound() {
     }
 }
 
-    function showPassScreen() {
-        clearGameTimer();
-        showScreen("pass");
 
-        const revealBtn = document.getElementById("revealRoleBtn");
-        const continueBtn = document.getElementById("continueBtn");
 
-        // ✅ initial state (disabled, yellow)
-        revealBtn.disabled = false;
-        revealBtn.innerText = "Reveal My Role";
 
-        continueBtn.disabled = true;
-        continueBtn.innerText = "Continue";
 
-        continueBtn.classList.remove("btn-success");
-        continueBtn.classList.add("btn-warning");
 
-        // ✅ AFTER REVEAL → TURN GREEN
 
-        revealBtn.onclick = () => {
-            revealMyRole();
+
+
+
+
+function showPassScreen() {
+    clearGameTimer();
+    clearContinueCountdown();
+    showScreen("pass");
+
+    const revealBtn = document.getElementById("revealRoleBtn");
+    const continueBtn = document.getElementById("continueBtn");
+
+    revealBtn.disabled = false;
+    revealBtn.innerText = "Reveal My Role";
+
+    continueBtn.disabled = true;
+    continueBtn.innerText = "Continue";
+    continueBtn.classList.remove("btn-success");
+    continueBtn.classList.add("btn-warning");
+
+    revealBtn.onclick = () => {
+        revealMyRole();
+
+        continueBtn.disabled = false;
+        continueBtn.classList.remove("btn-warning");
+        continueBtn.classList.add("btn-success");
+
+        clearContinueCountdown();
+
+        let secondsLeft = 5;
+        continueBtn.innerText = `Continue in ${secondsLeft}s`;
+
+        continueCountdownInterval = setInterval(() => {
+            secondsLeft -= 1;
+
+            if (secondsLeft > 0) {
+                continueBtn.innerText = `Continue in ${secondsLeft}s`;
+            } else {
+                clearContinueCountdown();
+                if (!continueBtn.disabled) {
+                    continueBtn.click();
+                }
+            }
+        }, 1000);
+
+        continueAutoTimeout = setTimeout(() => {
+            clearContinueCountdown();
+            if (!continueBtn.disabled) {
+                continueBtn.click();
+            }
+        }, 5000);
+    };
+
+    continueBtn.onclick = async () => {
+        if (continueBtn.disabled) return;
+
+        clearContinueCountdown();
+
+        try {
+            continueBtn.disabled = true;
+            continueBtn.innerText = "Waiting...";
+            continueBtn.classList.remove("btn-success");
+            continueBtn.classList.add("btn-warning");
+
+            await updateDoc(doc(db, "rooms", roomId), {
+                readyForDiscussion: arrayUnion(playerName)
+            });
+
+            console.log("✅ READY SENT:", playerName);
+        } catch (err) {
+            console.error(err);
 
             continueBtn.disabled = false;
             continueBtn.innerText = "Continue";
             continueBtn.classList.remove("btn-warning");
             continueBtn.classList.add("btn-success");
-        };
+
+            toast("Failed to continue");
+        }
+    };
+}
 
 
 
-        // ✅ AFTER CONTINUE → TURN YELLOW + WAITING
-        continueBtn.onclick = async () => {
-            console.log("➡️ Continue clicked");
 
-            if (continueBtn.disabled) return;
 
-            try {
-                continueBtn.disabled = true;
-
-                // ✅ SWITCH TO YELLOW + WAITING TEXT
-                continueBtn.innerText = "Waiting...";
-                continueBtn.classList.remove("btn-success");
-                continueBtn.classList.add("btn-warning");
-
-                await updateDoc(doc(db, "rooms", roomId), {
-                    readyForDiscussion: arrayUnion(playerName)
-                });
-
-                console.log("✅ READY SENT:", playerName);
-
-            } catch (err) {
-                console.error(err);
-
-                continueBtn.disabled = false;
-
-                // ✅ back to GREEN if failed
-                continueBtn.innerText = "Continue";
-                continueBtn.classList.remove("btn-warning");
-                continueBtn.classList.add("btn-success");
-
-                toast("Failed to continue");
-            }
-        };
-    }
 
     
 

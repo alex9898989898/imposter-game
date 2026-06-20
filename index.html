@@ -39,22 +39,22 @@
 
 
 
-    <div class="top-actions">
-      <div id="langBadge" class="lang-badge">EN</div>
+ <div class="top-actions">
+  <button id="hostLobbyBtn" class="icon-btn host-lobby-btn" style="display:none;">
+    <i class="fa-solid fa-house"></i>
+  </button>
 
-      
-      <button id="langBtn" class="icon-btn">
-        <i class="fa-solid fa-globe"></i>
-      </button>
+  <div id="langBadge" class="lang-badge">EN</div>
 
+  <button id="langBtn" class="icon-btn">
+    <i class="fa-solid fa-globe"></i>
+  </button>
 
-      
-      <button id="themeBtn" class="icon-btn">
-        <i class="fa-solid fa-moon"></i>
-      </button>
+  <button id="themeBtn" class="icon-btn">
+    <i class="fa-solid fa-moon"></i>
+  </button>
+</div>
 
-
-    </div>
 
   </header>
 
@@ -239,15 +239,49 @@
       </div>
     </div>
 
+
+
+
+
     <div id="discussionTimeWrap" class="settings-box">
-      <div class="settings-label">⏱ Discussion Time</div>
-      <div id="discussionTimeButtons" class="time-options">
-        <button type="button" class="time-btn" data-time="30">30s</button>
-        <button type="button" class="time-btn active" data-time="60">60s</button>
-        <button type="button" class="time-btn" data-time="90">90s</button>
-        <button type="button" class="time-btn" data-time="120">120s</button>
-      </div>
-    </div>
+  <div class="settings-label">⏱ Discussion Time</div>
+
+  <div id="discussionTimeButtons" class="time-options">
+    <button type="button" class="time-btn" data-time="30">30s</button>
+    <button type="button" class="time-btn active" data-time="60">60s</button>
+    <button type="button" class="time-btn" data-time="90">90s</button>
+    <button type="button" class="time-btn" data-time="120">120s</button>
+  </div>
+
+  <div class="time-custom-row">
+    <input
+      id="discussionTimeInput"
+      class="input time-input"
+      type="number"
+      min="10"
+      max="900"
+      step="5"
+      value="60"
+      placeholder="Seconds"
+    />
+    <button id="applyDiscussionTimeBtn" class="btn btn-primary" type="button">
+      Set
+    </button>
+  </div>
+</div>
+
+<div id="impostorCountWrap" class="settings-box">
+  <div class="settings-label">🕵️ Impostors</div>
+  <div class="count-stepper">
+    <button id="impostorMinusBtn" class="count-btn" type="button">−</button>
+    <div id="impostorCountValue" class="count-value">1</div>
+    <button id="impostorPlusBtn" class="count-btn" type="button">+</button>
+  </div>
+</div>
+
+
+
+
 
     <div class="players-box">
       <ul id="playersList"></ul>
@@ -366,16 +400,15 @@
       <div id="statsContent"></div>
     </div>
 
-    <div class="button-row">
-<button id="backToLobbyBtn" class="btn btn-warning" style="display:none;">
-  ↩ Back to Lobby
-</button>
+    <button id="backToLobbyBtn" class="btn btn-warning" style="display:none;">
+      ↩ Back to Lobby
+    </button>
 
-<div class="button-row">
-  <button id="nextRoundBtn" class="btn btn-primary">Next Round</button>
-  <button id="leaveResultsBtn" class="btn btn-danger">🚪 Leave</button>
-</div>
-  </div>
+    <div class="button-row">
+      <button id="nextRoundBtn" class="btn btn-primary">Next Round</button>
+      <button id="leaveResultsBtn" class="btn btn-danger">🚪 Leave</button>
+    </div>
+
 </section>
 
     <!-- Scoreboard -->

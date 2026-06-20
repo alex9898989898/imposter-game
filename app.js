@@ -1974,86 +1974,94 @@ function getActivePlayers() {
 function getEligibleVoters() {
     return getActivePlayers().filter(p => p.name !== roomData.impostor);
 }
+function getEligibleVoters() {
+    return (roomData.players || []).filter(
+        p => !p.spectator && p.name !== roomData.impostor
+    );
+}
 
     // ==========================
     // SHOW VOTING UI
     // ==========================
     function showVoting() {
-        votingStarted = true;
+    votingStarted = true;
 
-        clearGameTimer();
-        showScreen("voting");
+    clearGameTimer();
+    showScreen("voting");
 
-        const container = document.getElementById("voteList");
-        container.innerHTML = "";
+    const container = document.getElementById("voteList");
+    container.innerHTML = "";
 
-        const timerEl = document.createElement("div");
-        timerEl.id = "voteTimer";
-        timerEl.style.marginBottom = "10px";
-        timerEl.style.fontSize = "20px";
-        container.appendChild(timerEl);
+    const timerEl = document.createElement("div");
+    timerEl.id = "voteTimer";
+    timerEl.style.marginBottom = "10px";
+    timerEl.style.fontSize = "20px";
+    container.appendChild(timerEl);
 
-        const info = document.createElement("div");
-        info.id = "voteInfo";
-        info.style.marginBottom = "10px";
-        container.appendChild(info);
+    const info = document.createElement("div");
+    info.id = "voteInfo";
+    info.style.marginBottom = "10px";
+    container.appendChild(info);
 
-        // ✅ impostor cannot vote
-        if (playerName === roomData.impostor) {
-            const msg = document.createElement("div");
-            msg.className = "center";
-            msg.innerText = "🕵️ Impostor cannot vote";
-            msg.style.marginBottom = "12px";
-            container.appendChild(msg);
-
-            startVoteTimer();
-            return;
-        }
-
-        const voteTargets = getActivePlayers().filter(
-            p => p.name !== playerName && p.name !== roomData.impostor
-        );
-
-        voteTargets.forEach(p => {
-            const btn = document.createElement("button");
-            btn.className = "vote-btn";
-            btn.innerText = p.name;
-            btn.onclick = () => votePlayer(p.name);
-            container.appendChild(btn);
-        });
+    // ✅ impostor sees message only, no vote buttons
+    if (playerName === roomData.impostor) {
+        const msg = document.createElement("div");
+        msg.className = "center";
+        msg.innerText = "🕵️ Impostor cannot vote";
+        msg.style.marginBottom = "12px";
+        container.appendChild(msg);
 
         startVoteTimer();
+        return;
     }
+
+    // ✅ everyone else can vote for ANY other active non-spectator player
+    // including the impostor
+    const voteTargets = (roomData.players || []).filter(
+        p => !p.spectator && p.name !== playerName
+    );
+
+    voteTargets.forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "vote-btn";
+        btn.innerText = p.name;
+        btn.onclick = () => votePlayer(p.name);
+        container.appendChild(btn);
+    });
+
+    startVoteTimer();
+}
+
 
     // ==========================
     // update Voting UI
     // ==========================
 
-    function updateVotingUI() {
-        const votes = roomData.votes || {};
-        const total = getEligibleVoters().length;
+function updateVotingUI() {
+    const votes = roomData.votes || {};
+    const total = getEligibleVoters().length;
 
-        const info = document.getElementById("voteInfo");
-        if (info) {
-            info.innerText = `Votes: ${Object.keys(votes).length}/${total}`;
+    const info = document.getElementById("voteInfo");
+    if (info) {
+        info.innerText = `Votes: ${Object.keys(votes).length}/${total}`;
+    }
+
+    const buttons = document.querySelectorAll(".vote-btn");
+
+    buttons.forEach(btn => {
+        const name = btn.innerText;
+        const myVote = votes[playerName];
+
+        if (myVote) {
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
         }
 
-        const buttons = document.querySelectorAll(".vote-btn");
-
-        buttons.forEach(btn => {
-            const name = btn.innerText;
-            const myVote = votes[playerName];
-
-            if (myVote) {
-                btn.disabled = true;
-                btn.style.opacity = "0.6";
-            }
-
-            if (myVote === name) {
-                btn.style.background = "#22c55e";
-            }
-        });
-    }
+        if (myVote === name) {
+            btn.style.background = "#22c55e";
+        }
+    });
+}
 
 
     // ==========================
@@ -2061,7 +2069,7 @@ function getEligibleVoters() {
     // ==========================
 
 
- function startVoteTimer() {
+function startVoteTimer() {
     clearGameTimer();
 
     timerInterval = setInterval(() => {
@@ -2101,28 +2109,32 @@ function getEligibleVoters() {
         }
     }, 1000);
 }
+
+
+
+
     // ==========================
     // VOTE PLAYER
     // ==========================
 
-    async function votePlayer(target) {
+async function votePlayer(target) {
+    // ✅ impostor cannot vote
     if (playerName === roomData.impostor) {
         return toast("Impostor cannot vote");
     }
 
+    // ✅ no self vote
     if (target === playerName) {
         return toast("You cannot vote for yourself");
     }
 
-    if (target === roomData.impostor) {
-        // ✅ allowed: players can vote for impostor
-    }
-
+    // ✅ no double vote
     if (roomData.votes && roomData.votes[playerName]) {
         return toast("You already voted");
     }
 
     const buttons = document.querySelectorAll(".vote-btn");
+
     buttons.forEach(btn => {
         if (btn.innerText === target) {
             btn.style.background = "#22c55e";
@@ -2135,6 +2147,14 @@ function getEligibleVoters() {
         [`votes.${playerName}`]: target
     });
 }
+
+
+
+
+
+
+
+
 
 function computeRoundOutcome(data) {
     const votes = data.votes || {};

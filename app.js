@@ -1972,9 +1972,6 @@ function getActivePlayers() {
 }
 
 function getEligibleVoters() {
-    return getActivePlayers().filter(p => p.name !== roomData.impostor);
-}
-function getEligibleVoters() {
     return (roomData.players || []).filter(
         p => !p.spectator && p.name !== roomData.impostor
     );
@@ -2320,6 +2317,12 @@ function renderStatistics() {
                             <strong>${impostor}</strong>
                         </div>
 
+
+                        <div class="winner-box slide-up delay-1">
+                        <span>🧠 Secret Word</span>
+                        <strong>${revealedWord}</strong>
+                        </div>
+
                         <div class="winner-box slide-up green-glow delay-1">
                             <span>✅ Correct Guessers</span>
                             <div class="winner-list">
@@ -2350,6 +2353,11 @@ function renderStatistics() {
                             <strong>${impostor}</strong>
                         </div>
 
+                        <div class="winner-box slide-up delay-1">
+                        <span>🧠 Secret Word</span>
+                        <strong>${revealedWord}</strong>
+                        </div>
+
                         <div class="winner-box slide-up dark-glow delay-1">
                             <span>👑 Winner</span>
                             <div class="winner-list">
@@ -2369,6 +2377,11 @@ function renderStatistics() {
                         <div class="impostor-box slide-up red-glow">
                             <span>🕵️ Impostor</span>
                             <strong>${impostor}</strong>
+                        </div>
+
+                        <div class="winner-box slide-up delay-1">
+                        <span>🧠 Secret Word</span>
+                        <strong>${revealedWord}</strong>
                         </div>
 
                         <div class="winner-box slide-up dark-glow delay-1">

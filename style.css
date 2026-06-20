@@ -2159,3 +2159,9 @@ body:not(.light) .stats-row {
     font-size: 13px;
   }
 }
+
+
+#backToLobbyBtn {
+  min-height: 48px;
+  border-radius: 14px;
+}

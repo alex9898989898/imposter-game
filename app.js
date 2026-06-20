@@ -2233,6 +2233,45 @@ function renderStatistics() {
         </div>
     `;
 }
+
+
+
+async function backToLobby() {
+    if (!isHost) return;
+
+    const roomRef = doc(db, "rooms", roomId);
+
+    await updateDoc(roomRef, {
+        phase: "lobby",
+        started: false,
+        nextRoundReady: [],
+        readyForDiscussion: [],
+        revealedPlayers: [],
+        votes: {},
+        voteStarted: null,
+        timeStarted: null,
+
+        // reset players for a fresh lobby
+        players: roomData.players.map(p => ({
+            ...p,
+            ready: false,
+            spectator: false,
+            score: 0   // ✅ remove this line if you want to KEEP scores
+        }))
+    });
+
+    // local reset
+    passShown = false;
+    discussionStarted = false;
+    votingStarted = false;
+    resultsShown = false;
+    resultsTriggered = false;
+    nextRoundStarted = false;
+    timeLeft = 0;
+    clearGameTimer();
+
+    toast("Back to lobby");
+}
     // ==========================
     // SHOW RESULTS
     // ==========================
@@ -2258,6 +2297,21 @@ function renderStatistics() {
         }
         document.body.classList.remove("win", "lose");
         showScreen("results");
+
+        const backToLobbyBtn = document.getElementById("backToLobbyBtn");
+
+if (backToLobbyBtn) {
+    if (isHost) {
+        backToLobbyBtn.style.display = "block";
+        backToLobbyBtn.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await backToLobby();
+        };
+    } else {
+        backToLobbyBtn.style.display = "none";
+    }
+}
 
         const votes = roomData.votes || {};
         const content = document.getElementById("resultsContent");

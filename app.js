@@ -171,31 +171,36 @@ function showScreen(name) {
     }
 }
 
+
 async function touchPresence() {
-    if (!roomId || !playerName || !roomData?.players) return;
+    if (!roomId || !playerName) return;
 
     const roomRef = doc(db, "rooms", roomId);
+    const snap = await getDoc(roomRef);
 
-    const found = roomData.players.some(p => p.sessionId === playerSessionId);
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+    const players = data.players || [];
+
+    const found = players.some(p => p.sessionId === playerSessionId);
     if (!found) return;
 
-const updatedPlayers = roomData.players.map(p => {
-  if (p.sessionId === playerSessionId) {
-    return {
-      ...p,
-      lastSeen: Date.now()
-    };
-  }
-  return p;
-});
+    const updatedPlayers = players.map(p => {
+        if (p.sessionId === playerSessionId) {
+            return {
+                ...p,
+                lastSeen: Date.now()
+            };
+        }
+        return p;
+    });
 
-await updateDoc(roomRef, {
-  players: updatedPlayers
-});
-
-
-
+    await updateDoc(roomRef, {
+        players: updatedPlayers
+    });
 }
+
 
 function startPresenceHeartbeat() {
     stopPresenceHeartbeat();
@@ -608,62 +613,48 @@ startPresenceHeartbeat();
     return false;
     }
 
-async function cleanupStalePlayers() {
 
 
-
-
-    if (!roomData || cleanupRunning) return;
+    async function cleanupStalePlayers() {
+    if (!isHost || !roomData || cleanupRunning) return;
 
     const now = Date.now();
-
-    if (now - lastCleanup < 8000) return;
+    if (now - lastCleanup < 15000) return;
     lastCleanup = now;
 
     cleanupRunning = true;
 
     try {
-        const timeoutMs = 30000;
+        const timeoutMs = 90000; // ✅ much safer than 30s
 
         const players = roomData.players || [];
 
         const alivePlayers = players.filter(p => {
             if (!p.lastSeen) return true;
-
             if (p.sessionId === playerSessionId) return true;
-
             return now - p.lastSeen < timeoutMs;
         });
-        const validNames = alivePlayers.map(p => p.name);
-
-const cleanedVotes = {};
-
-Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
-  if (validNames.includes(voter) && validNames.includes(target)) {
-    cleanedVotes[voter] = target;
-  }
-});
 
         if (alivePlayers.length === players.length) return;
 
+        const validNames = alivePlayers.map(p => p.name);
+
+        const cleanedVotes = {};
+        Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
+            if (validNames.includes(voter) && validNames.includes(target)) {
+                cleanedVotes[voter] = target;
+            }
+        });
+
         const update = {
             players: alivePlayers,
-            votes: cleanedVotes, // ✅ ADD THIS
-            readyForDiscussion: (roomData.readyForDiscussion || []).filter(name =>
-                alivePlayers.some(p => p.name === name)
-            ),
-            revealedPlayers: (roomData.revealedPlayers || []).filter(name =>
-                alivePlayers.some(p => p.name === name)
-            ),
-            nextRoundReady: (roomData.nextRoundReady || []).filter(name =>
-                alivePlayers.some(p => p.name === name)
-            )
+            votes: cleanedVotes,
+            readyForDiscussion: (roomData.readyForDiscussion || []).filter(name => validNames.includes(name)),
+            revealedPlayers: (roomData.revealedPlayers || []).filter(name => validNames.includes(name)),
+            nextRoundReady: (roomData.nextRoundReady || []).filter(name => validNames.includes(name))
         };
 
-        if (
-            !alivePlayers.some(p => p.name === roomData.host) &&
-            alivePlayers.length > 0
-        ) {
+        if (!alivePlayers.some(p => p.name === roomData.host) && alivePlayers.length > 0) {
             update.host = alivePlayers[0].name;
         }
 
@@ -672,7 +663,7 @@ Object.entries(roomData.votes || {}).forEach(([voter, target]) => {
     } catch (err) {
         console.error("❌ cleanup error:", err);
     } finally {
-        cleanupRunning = false; // ✅ ALWAYS released
+        cleanupRunning = false;
     }
 }
 
@@ -851,9 +842,11 @@ if (previousPhase === "results" && roomData.phase === "playing") {
 
         updateLanguageControl();
         updateLobbyUI();
-        cleanupStalePlayers(); // ✅ ADD T
-                // ✅ PASS SCREEN
-                // 🔍 DEBUG PASS CHECK
+
+        if (isHost) {
+            cleanupStalePlayers();
+        }
+
         console.log("CHECK PASS:", {
             phase: roomData.phase,
             timeStarted: roomData.timeStarted,
@@ -1972,6 +1965,16 @@ function showDiscussion() {
     });
     }
 
+
+    
+function getActivePlayers() {
+    return (roomData.players || []).filter(p => !p.spectator);
+}
+
+function getEligibleVoters() {
+    return getActivePlayers().filter(p => p.name !== roomData.impostor);
+}
+
     // ==========================
     // SHOW VOTING UI
     // ==========================
@@ -1984,37 +1987,42 @@ function showDiscussion() {
         const container = document.getElementById("voteList");
         container.innerHTML = "";
 
-        // ✅ TIMER DISPLAY
         const timerEl = document.createElement("div");
         timerEl.id = "voteTimer";
         timerEl.style.marginBottom = "10px";
         timerEl.style.fontSize = "20px";
         container.appendChild(timerEl);
 
-        // ✅ INFO DISPLAY
         const info = document.createElement("div");
-        info.id = "voteInfo"; // ✅ IMPORTANT
+        info.id = "voteInfo";
         info.style.marginBottom = "10px";
         container.appendChild(info);
 
-        // ✅ PLAYER BUTTONS (ONLY ONCE)
-        
-        const votePlayers = (roomData.players || []).filter(p => !p.spectator);
+        // ✅ impostor cannot vote
+        if (playerName === roomData.impostor) {
+            const msg = document.createElement("div");
+            msg.className = "center";
+            msg.innerText = "🕵️ Impostor cannot vote";
+            msg.style.marginBottom = "12px";
+            container.appendChild(msg);
 
-        votePlayers.forEach(p => {
+            startVoteTimer();
+            return;
+        }
 
-            if (p.name === playerName) return;
+        const voteTargets = getActivePlayers().filter(
+            p => p.name !== playerName && p.name !== roomData.impostor
+        );
 
+        voteTargets.forEach(p => {
             const btn = document.createElement("button");
             btn.className = "vote-btn";
             btn.innerText = p.name;
-
             btn.onclick = () => votePlayer(p.name);
-
             container.appendChild(btn);
         });
 
-        startVoteTimer(); // ✅ move timer logic out
+        startVoteTimer();
     }
 
     // ==========================
@@ -2023,17 +2031,13 @@ function showDiscussion() {
 
     function updateVotingUI() {
         const votes = roomData.votes || {};
-        
-        const votePlayers = (roomData.players || []).filter(p => !p.spectator);
-        const total = votePlayers.length;
-
+        const total = getEligibleVoters().length;
 
         const info = document.getElementById("voteInfo");
         if (info) {
             info.innerText = `Votes: ${Object.keys(votes).length}/${total}`;
         }
 
-        // ✅ update buttons state
         const buttons = document.querySelectorAll(".vote-btn");
 
         buttons.forEach(btn => {
@@ -2052,104 +2056,161 @@ function showDiscussion() {
     }
 
 
-
-    function startVoteTimer() {
-        timerInterval = setInterval(() => {
-
-
-            const votes = roomData.votes || {};
-
-            const activePlayers = (roomData.players || []).filter(p => !p.spectator);
-            const activeNames = activePlayers.map(p => p.name);
-
-            const activeVotes = Object.entries(votes).filter(
-                ([voter]) => activeNames.includes(voter)
-            );
-
-            if (activeVotes.length === activeNames.length) {
+    // ==========================
+    // START VOTE TIMER
+    // ==========================
 
 
-                clearGameTimer();
+ function startVoteTimer() {
+    clearGameTimer();
 
-                if (isHost && roomData.phase === "voting") {
-                    calculateResults();
-                }
-                return;
+    timerInterval = setInterval(() => {
+        const votes = roomData.votes || {};
+        const eligibleNames = getEligibleVoters().map(p => p.name);
+
+        const validVotes = Object.entries(votes).filter(([voter]) =>
+            eligibleNames.includes(voter)
+        );
+
+        if (validVotes.length === eligibleNames.length) {
+            clearGameTimer();
+
+            if (isHost && roomData.phase === "voting") {
+                calculateResults();
             }
+            return;
+        }
 
-            const start = roomData.voteStarted;
-            if (!start) return;
+        const start = roomData.voteStarted;
+        if (!start) return;
 
-            const elapsed = Math.floor((Date.now() - start) / 1000);
-            const remaining = 60 - elapsed;
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        const remaining = 60 - elapsed;
 
-            const el = document.getElementById("voteTimer");
-            if (el) el.innerText = `⏳ ${Math.max(remaining, 0)}s`;
+        const el = document.getElementById("voteTimer");
+        if (el) {
+            el.innerText = `⏳ ${Math.max(remaining, 0)}s`;
+        }
 
-            if (remaining <= 0) {
-                clearGameTimer();
+        if (remaining <= 0) {
+            clearGameTimer();
 
-                if (isHost) {
-                    calculateResults();
-                }
+            if (isHost && roomData.phase === "voting") {
+                calculateResults();
             }
-
-        }, 1000);
-    }
+        }
+    }, 1000);
+}
     // ==========================
     // VOTE PLAYER
     // ==========================
 
     async function votePlayer(target) {
-
-        // ✅ prevent self vote
-        if (target === playerName) {
-            return toast("You cannot vote for yourself");
-        }
-
-        // ✅ prevent double vote
-        if (roomData.votes && roomData.votes[playerName]) {
-            return toast("You already voted");
-        }
-
-        // ✅ UI feedback
-        const buttons = document.querySelectorAll(".vote-btn");
-
-        buttons.forEach(btn => {
-            if (btn.innerText === target) {
-                btn.style.background = "#22c55e";
-            }
-            btn.disabled = true;
-            btn.style.opacity = "0.6";
-        });
-
-        const roomRef = doc(db, "rooms", roomId);
-
-        await updateDoc(roomRef, {
-            [`votes.${playerName}`]: target
-        });
-
+    if (playerName === roomData.impostor) {
+        return toast("Impostor cannot vote");
     }
+
+    if (target === playerName) {
+        return toast("You cannot vote for yourself");
+    }
+
+    if (target === roomData.impostor) {
+        // ✅ allowed: players can vote for impostor
+    }
+
+    if (roomData.votes && roomData.votes[playerName]) {
+        return toast("You already voted");
+    }
+
+    const buttons = document.querySelectorAll(".vote-btn");
+    buttons.forEach(btn => {
+        if (btn.innerText === target) {
+            btn.style.background = "#22c55e";
+        }
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+    });
+
+    await updateDoc(doc(db, "rooms", roomId), {
+        [`votes.${playerName}`]: target
+    });
+}
+
+function computeRoundOutcome(data) {
+    const votes = data.votes || {};
+    const impostorName = data.impostor;
+
+    const correctGuessers = Object.keys(votes).filter(
+        voter => votes[voter] === impostorName
+    );
+
+    const impostorEscaped = correctGuessers.length === 0;
+
+    return {
+        impostorName,
+        word: data.word,
+        correctGuessers,
+        roundWinners: impostorEscaped ? [impostorName] : correctGuessers,
+        impostorEscaped
+    };
+}
 
     // ==========================
     // CALCULATE RESULTS
     // ==========================
 
+async function calculateResults() {
+    if (resultsTriggered) return;
 
-    async function calculateResults() {
-        if (resultsTriggered) return; // ✅ BLOCK DUPLICATES
+    resultsTriggered = true;
 
-        resultsTriggered = true;
+    const roomRef = doc(db, "rooms", roomId);
+    const outcome = computeRoundOutcome(roomData);
 
-        const roomRef = doc(db, "rooms", roomId);
+    const updatedPlayers = roomData.players.map(p => {
+        if (outcome.roundWinners.includes(p.name)) {
+            return {
+                ...p,
+                score: (p.score || 0) + 1
+            };
+        }
+        return p;
+    });
 
-        await updateDoc(roomRef, {
-            phase: "results"
-        });
-    }
+    await updateDoc(roomRef, {
+        phase: "results",
+        players: updatedPlayers,
+        roundWinners: outcome.roundWinners,
+        revealedWord: outcome.word
+    });
+}
 
+function renderStatistics() {
+    const statsContent = document.getElementById("statsContent");
+    if (!statsContent || !roomData?.players) return;
 
+    const sorted = [...roomData.players]
+        .filter(p => !p.spectator)
+        .sort((a, b) => (b.score || 0) - (a.score || 0));
 
+    const topScore = sorted.length ? (sorted[0].score || 0) : 0;
+    const leaders = sorted.filter(p => (p.score || 0) === topScore);
+
+    statsContent.innerHTML = `
+        <div class="stats-header">
+            <strong>🏆 Leader${leaders.length > 1 ? "s" : ""}:</strong>
+            ${leaders.map(p => `${p.name} (${p.score || 0})`).join(", ")}
+        </div>
+        <div class="stats-list">
+            ${sorted.map((p, index) => `
+                <div class="stats-row">
+                    <span>${index + 1}. ${p.name}</span>
+                    <strong>${p.score || 0} pt</strong>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
     // ==========================
     // SHOW RESULTS
     // ==========================
@@ -2157,28 +2218,29 @@ function showDiscussion() {
 
         const oldLeaveBtn = document.getElementById("leaveResultsBtn");
 
-if (oldLeaveBtn) {
-    const newLeaveBtn = oldLeaveBtn.cloneNode(true);
-    oldLeaveBtn.parentNode.replaceChild(newLeaveBtn, oldLeaveBtn);
+        if (oldLeaveBtn) {
+            const newLeaveBtn = oldLeaveBtn.cloneNode(true);
+            oldLeaveBtn.parentNode.replaceChild(newLeaveBtn, oldLeaveBtn);
 
-    newLeaveBtn.onclick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+            newLeaveBtn.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-        try {
-            await leaveRoom();
-        } catch (err) {
-            console.error("❌ leave from results failed:", err);
-            toast("Failed to leave");
+                try {
+                    await leaveRoom();
+                } catch (err) {
+                    console.error("❌ leave from results failed:", err);
+                    toast("Failed to leave");
+                }
+            };
         }
-    };
-}
         document.body.classList.remove("win", "lose");
         showScreen("results");
 
         const votes = roomData.votes || {};
         const content = document.getElementById("resultsContent");
         const impostor = roomData.impostor;
+        const revealedWord = roomData.revealedWord || roomData.word || "-";
 
         let winners = [];
 
@@ -2210,6 +2272,12 @@ if (oldLeaveBtn) {
                             <span>🕵️ Impostor</span>
                             <strong>${impostor}</strong>
                         </div>
+                        
+                        <div class="winner-box slide-up delay-1">
+                        <span>🧠 Secret Word</span>
+                        <strong>${revealedWord}</strong>
+                        </div>
+
 
                         <div class="winner-box slide-up green-glow delay-1">
                             <span>✅ Correct Guessers</span>
@@ -2325,6 +2393,18 @@ if (oldLeaveBtn) {
         }
 
         updateNextBtn();
+        const statsPanel = document.getElementById("statsPanel");
+        const toggleStatsBtn = document.getElementById("toggleStatsBtn");
+
+        renderStatistics();
+
+        if (toggleStatsBtn && statsPanel) {
+            toggleStatsBtn.onclick = () => {
+                const isOpen = statsPanel.style.display === "block";
+                statsPanel.style.display = isOpen ? "none" : "block";
+                toggleStatsBtn.innerText = isOpen ? "📈 Show Statistics" : "📉 Hide Statistics";
+            };
+        }
 
         newBtn.onclick = async (e) => {
             e.preventDefault();

@@ -356,29 +356,20 @@
     <!-- Results -->
 <section id="resultsScreen" class="screen">
   <div class="card">
-
-    <h2>
-      📊 Results
-    </h2>
+    <h2>📊 Results</h2>
 
     <div id="resultsContent" class="results-box"></div>
 
-    <div class="button-row">
-      <button
-        id="nextRoundBtn"
-        class="btn btn-primary"
-      >
-        Next Round
-      </button>
+    <button id="toggleStatsBtn" class="btn btn-warning">📈 Show Statistics</button>
 
-      <button
-        id="leaveResultsBtn"
-        class="btn btn-danger"
-      >
-        🚪 Leave
-      </button>
+    <div id="statsPanel" class="stats-panel" style="display:none;">
+      <div id="statsContent"></div>
     </div>
 
+    <div class="button-row">
+      <button id="nextRoundBtn" class="btn btn-primary">Next Round</button>
+      <button id="leaveResultsBtn" class="btn btn-danger">🚪 Leave</button>
+    </div>
   </div>
 </section>
 

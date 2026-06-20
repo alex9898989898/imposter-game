@@ -1839,3 +1839,46 @@ body.light #playersList li {
     padding: 9px 6px;
   }
 }
+
+
+
+
+/* =========================
+   statik 
+========================= */
+
+.stats-panel {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+body.light .stats-panel {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.stats-header {
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+}
+
+body.light .stats-row {
+  background: rgba(0,0,0,0.03);
+}

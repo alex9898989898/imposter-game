@@ -2464,30 +2464,30 @@ if (backToLobbyBtn) {
     }
 }
 
-        const votes = roomData.votes || {};
-        const content = document.getElementById("resultsContent");
-        const impostor = roomData.impostor;
-        const revealedWord = roomData.revealedWord || roomData.word || "-";
+    const votes = roomData.votes || {};
+    const content = document.getElementById("resultsContent");
+    const revealedWord = roomData.revealedWord || roomData.word || "-";
 
-        const impostorNames = getImpostorNames(roomData);
-        const impostorLabel = impostorNames.join(", ");
+    const impostorNames = getImpostorNames(roomData);
+    const impostorLabel = impostorNames.join(", ");
 
-        let winners = [];
+    let winners = [];
 
-        Object.keys(votes).forEach(player => {
-            if (impostorNames.includes(votes[player])) {
-                winners.push(player);
-            }
-        });
+    Object.keys(votes).forEach(player => {
+        if (impostorNames.includes(votes[player])) {
+            winners.push(player);
+        }
+    });
 
-       const impostorNames = getImpostorNames(roomData);
-        const impostorLabel = impostorNames.join(", ");
-        const guessedCorrectly = winners.includes(playerName);
-        const iAmImpostor = impostorNames.includes(playerName);
+    const guessedCorrectly = winners.includes(playerName);
+    const iAmImpostor = impostorNames.includes(playerName);
 
-        // ==========================
-        // CASE 1: Impostor was found
-        // ==========================
+// ==========================
+//
+ // CASE 1: Impostor was found
+ // 
+ // ==========================
+
         if (winners.length > 0) {
 
             if (guessedCorrectly) {
@@ -2501,7 +2501,7 @@ if (backToLobbyBtn) {
 
                         <div class="impostor-box slide-up red-glow">
                             <span>🕵️ Impostor</span>
-                            <strong>${impostor}</strong>
+                           <strong>${impostorLabel}</strong>
                         </div>
                         
                         <div class="winner-box slide-up delay-1">
@@ -2528,7 +2528,7 @@ if (backToLobbyBtn) {
 
                         <div class="impostor-box slide-up red-glow">
                             <span>🕵️ Impostor</span>
-                            <strong>${impostor}</strong>
+                            <strong>${impostorLabel}</strong>
                         </div>
 
 
@@ -2590,7 +2590,7 @@ if (backToLobbyBtn) {
 
                         <div class="impostor-box slide-up red-glow">
                             <span>🕵️ Impostor</span>
-                            <strong>${impostor}</strong>
+                            <strong>${impostorLabel}</strong>
                         </div>
 
                         <div class="winner-box slide-up delay-1">

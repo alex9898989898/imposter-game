@@ -235,7 +235,7 @@ window.createRoom = async function () {
     console.log("🔥 Creating room...");
 
     if (!(await isGameEnabled())) {
-      return toast("Server busy");
+      return toast("Server busy, Try again later");
     }
 
     const input = document.getElementById("playerName");
